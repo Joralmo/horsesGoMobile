@@ -8,6 +8,7 @@ import com.horsesgo.game.MatchState
 import com.horsesgo.game.Position
 import com.horsesgo.game.Side
 import com.horsesgo.game.testBoard
+import com.horsesgo.game.testOpening
 import com.horsesgo.storage.MatchRead
 import com.horsesgo.storage.MatchStore
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,7 @@ class GameViewModelPersistenceTest {
         assertEquals(0, vm.uiState.value.match?.board?.moveNumber)
 
         store.accepted = false
-        vm.play(Position(3, 0))
+        vm.play(vm.uiState.value.playerDestinations.first())
         runCurrent()
         assertEquals(GameMessage.SaveFailed, vm.uiState.value.message)
         assertEquals(0, vm.uiState.value.match?.board?.moveNumber)
@@ -53,7 +54,7 @@ class GameViewModelPersistenceTest {
 
     @Test
     fun resumesExactlyOneWhiteMoveFromStorage() {
-        val opening = GameRules().open(Difficulty.Beginner)
+        val opening = testOpening()
         val match = assertNotNull(GameRules().play(opening, Position(3, 0)))
         withGame(MatchRead.Present(match)) { vm, store ->
             assertEquals(listOf(2), store.saved.map { it.board.moveNumber })
@@ -96,12 +97,13 @@ internal class TestMatchStore(var stored: MatchRead = MatchRead.Absent) : MatchS
 internal fun withGame(
     initial: MatchRead = MatchRead.Absent,
     search: MoveSearch = MoveSearch { GameRules().legalMoves(it).firstOrNull() },
+    rules: GameRules = GameRules(),
     block: suspend TestScope.(GameViewModel, TestMatchStore) -> Unit,
 ) = runTest {
     val dispatcher = StandardTestDispatcher(testScheduler)
     Dispatchers.setMain(dispatcher)
     val store = TestMatchStore(initial)
-    val vm = GameViewModel(GameRules(), search, store, dispatcher, dispatcher)
+    val vm = GameViewModel(rules, search, store, dispatcher, dispatcher)
     try {
         runCurrent()
         block(vm, store)

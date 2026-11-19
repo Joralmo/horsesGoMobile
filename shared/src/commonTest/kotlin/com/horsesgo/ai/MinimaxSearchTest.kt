@@ -4,6 +4,7 @@ import com.horsesgo.game.GameRules
 import com.horsesgo.game.Move
 import com.horsesgo.game.Difficulty
 import com.horsesgo.game.Position
+import com.horsesgo.game.testOpening
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.runTest
@@ -38,6 +39,25 @@ class MinimaxSearchTest {
         val match = matchFromRows(Difficulty.Beginner, "B.##", "W..#", ".#..", "#...")
         val move = MinimaxSearch(rules).chooseMove(match)
         assertEquals(Position(3, 1), move?.to)
+    }
+
+    @Test
+    fun intermediate5x5ChoosesTheSixPlyMoveIncludingItsFirstJump() = runTest {
+        val level = Difficulty.entries.first { it.size == 5 }
+        var match = testOpening(level, black = Position(1, 4), white = Position(2, 1))
+        for (destination in "C1 C5 A2 A4 B4 B2 D3 D1 E1 E3 C2".split(" ")) {
+            val position = Position(destination[1].digitToInt() - 1, destination[0] - 'A')
+            match = assertNotNull(rules.play(match, position))
+        }
+        val before = match.board.cells()
+        val chosen = assertNotNull(MinimaxSearch(rules).chooseMove(match))
+
+        assertEquals(listOf(4, 6, 6, 8), Difficulty.entries.map { it.searchDepth })
+        assertEquals(setOf("C4"), exhaustiveBestMoves(match, rules, 2).map { it.to.notation() }.toSet())
+        assertEquals(setOf("C4"), exhaustiveBestMoves(match, rules, 5).map { it.to.notation() }.toSet())
+        assertEquals(setOf(chosen), exhaustiveBestMoves(match, rules, 6))
+        assertEquals("D5", chosen.to.notation())
+        assertEquals(before, match.board.cells())
     }
 
     @Test

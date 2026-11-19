@@ -78,7 +78,13 @@ internal fun HorsesGoApp(store: MatchStore) {
                             Screen.Selector -> LevelSelector(
                                 state, game::selectLevel, game::loadSelectedMap, game::returnToMatch,
                             )
-                            Screen.Board -> GameScreen(state, game::play, game::openSelector)
+                            Screen.Board -> GameScreen(
+                                state = state,
+                                onPlay = game::play,
+                                onChangeMap = game::openSelector,
+                                onViewMinimaxTree = game::openMinimaxTree,
+                                onCloseMinimaxTree = game::closeMinimaxTree,
+                            )
                             Screen.Loading -> Unit
                         }
                         state.message?.let { GameNotice(it, game::retrySave) }

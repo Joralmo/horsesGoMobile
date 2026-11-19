@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,11 +41,15 @@ import com.horsesgo.game.Board
 import com.horsesgo.game.Position
 import com.horsesgo.game.Side
 
+private val LegalMoveGreen = Color(0xFF389B52)
+
 @Composable
 internal fun GameScreen(
     state: GameUiState,
     onPlay: (Position) -> Unit,
     onChangeMap: () -> Unit,
+    onViewMinimaxTree: () -> Unit,
+    onCloseMinimaxTree: () -> Unit,
 ) {
     val match = state.match ?: return
     val board = match.board
@@ -71,14 +76,21 @@ internal fun GameScreen(
         Text(status, Modifier.padding(14.dp), fontWeight = FontWeight.SemiBold)
     }
 
-    GameBoard(board, state.canPlay, onPlay)
-    TextButton(onClick = onChangeMap, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) {
+    val playableDestinations = if (state.canPlay) state.playerDestinations else emptyList()
+    GameBoard(board, playableDestinations, onPlay)
+    if (state.canViewMinimaxTree) {
+        OutlinedButton(onClick = onViewMinimaxTree, modifier = Modifier.fillMaxWidth()) {
+            Text("Ver árbol MiniMax")
+        }
+    }
+    TextButton(onClick = onChangeMap, enabled = state.canChangeMap, modifier = Modifier.fillMaxWidth()) {
         Text("Cambiar mapa")
     }
+    state.minimaxTree?.let { MinimaxTreeDialog(board, it, onCloseMinimaxTree) }
 }
 
 @Composable
-private fun GameBoard(board: Board, canPlay: Boolean, onPlay: (Position) -> Unit) {
+private fun GameBoard(board: Board, playableDestinations: List<Position>, onPlay: (Position) -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val boardSize = maxWidth - 20.dp
@@ -97,7 +109,13 @@ private fun GameBoard(board: Board, canPlay: Boolean, onPlay: (Position) -> Unit
                         Row(Modifier.weight(1f).fillMaxWidth()) {
                             for (column in 0 until board.size) {
                                 val position = Position(row, column)
-                                BoardCell(board[position], position, canPlay, onPlay, Modifier.weight(1f))
+                                BoardCell(
+                                    board[position],
+                                    position,
+                                    position in playableDestinations,
+                                    onPlay,
+                                    Modifier.weight(1f),
+                                )
                             }
                         }
                     }
@@ -120,24 +138,26 @@ private fun GameBoard(board: Board, canPlay: Boolean, onPlay: (Position) -> Unit
 private fun BoardCell(
     cell: Int,
     position: Position,
-    canPlay: Boolean,
+    isPlayable: Boolean,
     onPlay: (Position) -> Unit,
     modifier: Modifier,
 ) {
     val light = (position.row + position.column) % 2 == 1
     val terrain = when {
+        isPlayable -> LegalMoveGreen
         cell == Board.DESTROYED -> Color(0xFF304541)
         light -> Color(0xFFE3D0A6)
         else -> Color(0xFF72958A)
     }
-    val label = when (cell) {
-        Board.DESTROYED -> "destruida"
-        Board.BLACK -> "caballo negro"
-        Board.WHITE -> "caballo blanco"
+    val label = when {
+        isPlayable -> "movimiento disponible"
+        cell == Board.DESTROYED -> "destruida"
+        cell == Board.BLACK -> "caballo negro"
+        cell == Board.WHITE -> "caballo blanco"
         else -> "libre"
     }
     val semantics = Modifier.semantics { contentDescription = "${position.notation()}, $label" }
-    val tap = if (canPlay && cell == Board.FREE) {
+    val tap = if (isPlayable) {
         Modifier.clickable(role = Role.Button) { onPlay(position) }
     } else Modifier
 

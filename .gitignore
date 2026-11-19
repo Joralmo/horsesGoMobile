@@ -9,9 +9,13 @@ out/
 *.iml
 *.class
 *.jar
+*.log
+.env*
 !gradle/wrapper/gradle-wrapper.jar
 local.properties
 DerivedData/
+.build/
+.swiftpm/
 xcuserdata/
 *.xcuserstate
 .DS_Store

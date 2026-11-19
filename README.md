@@ -8,7 +8,8 @@ y la máquina, con el blanco.
 
 ## Cómo se juega
 
-1. Elige un nivel y pulsa **Cargar mapa** para iniciar una partida.
+1. Elige un nivel y pulsa **Cargar mapa** para iniciar una partida. Los caballos
+   aparecen en dos casillas elegidas al azar y el caballo negro empieza.
 2. En tu turno, mueve el caballo en L hasta una casilla libre. Cada jugada válida
    destruye la casilla de origen y cede el turno. Ambos caballos pierden el acceso
    a esa casilla durante el resto de la partida.
@@ -20,13 +21,19 @@ y la máquina, con el blanco.
 | Nivel | Tablero | Profundidad máxima de MiniMax |
 | --- | --- | --- |
 | Principiante | 4 × 4 | 4 |
-| Intermedio | 6 × 6 | 6 |
+| Intermedio 5 × 5 | 5 × 5 | 6 |
+| Intermedio 6 × 6 | 6 × 6 | 6 |
 | Avanzado | 8 × 8 | 8 |
 
 La máquina usa MiniMax para explorar jugadas alternas. Si alcanza el límite de
 profundidad en una posición donde la partida sigue en curso, cuenta los saltos
 legales del caballo negro. Cada movimiento individual cuenta como un nivel de
 profundidad. MiniMax usa poda alfa-beta y calcula en segundo plano.
+
+En el 5 × 5, pulsa **Ver árbol MiniMax** durante tu turno para comparar tus saltos
+legales y las posibles respuestas de la máquina desde la posición actual. El
+árbol muestra dos movimientos, con la valoración de cada rama y los resultados
+terminales. Pulsa **Volver al tablero** para continuar la partida.
 
 MMKV guarda el tablero y el turno después de cada jugada. Al reabrir la app se
 recupera la última partida, incluido el ganador si ya terminó.
@@ -45,9 +52,10 @@ Xcode y ejecuta el esquema `iosApp`. El proyecto ejecuta Gradle para integrar
 el módulo compartido. Xcode 27 requiere un mínimo de iOS 15 para compilar con
 sus SDKs.
 
-Las pruebas compartidas se ejecutan con `./gradlew :shared:allTests`. La
-[guía de validación](specs/001-horses-go/quickstart.md) contiene las pruebas de
-aceptación y sus resultados.
+Las pruebas compartidas se ejecutan con `./gradlew :shared:allTests`. Las guías
+de [validación del juego base](specs/001-horses-go/quickstart.md) y de
+[validación del 5 × 5](specs/002-intermedio-5x5-minimax/quickstart.md) contienen
+los escenarios de aceptación.
 
 ## Constitución del proyecto
 

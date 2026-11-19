@@ -28,8 +28,8 @@ internal class MinimaxSearch(private val rules: GameRules) : MoveSearch {
     private suspend fun evaluate(match: MatchState, depth: Int, alpha: Int, beta: Int): Int {
         coroutineContext.ensureActive()
         val winner = rules.winner(match)
-        if (winner != null) return if (winner == Side.White) WHITE_WIN else BLACK_WIN
-        if (depth == 0) return rules.mobility(match.board, Side.Black)
+        val leafScore = minimaxLeafScore(rules, match, winner, atLimit = depth == 0)
+        if (leafScore != null) return leafScore
 
         val minimizing = match.turn == Side.White
         var lower = alpha
@@ -50,9 +50,16 @@ internal class MinimaxSearch(private val rules: GameRules) : MoveSearch {
         return result
     }
 
-    private companion object {
-        // The human mobility heuristic ranges from zero to eight.
-        const val WHITE_WIN = -1
-        const val BLACK_WIN = 9
-    }
+}
+
+// Terminal values lie outside the black horse's zero-to-eight mobility range.
+internal fun minimaxLeafScore(
+    rules: GameRules,
+    match: MatchState,
+    winner: Side?,
+    atLimit: Boolean,
+): Int? = when (winner) {
+    Side.White -> -1
+    Side.Black -> 9
+    null -> if (atLimit) rules.mobility(match.board, Side.Black) else null
 }

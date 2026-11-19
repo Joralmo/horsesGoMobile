@@ -79,9 +79,12 @@ internal fun LevelSelector(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
-                        Text(level.label, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "${level.size} × ${level.size} · MiniMax ${level.searchDepth} jugadas",
+                            "${level.label} ${level.size} × ${level.size}",
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "MiniMax · ${level.searchDepth} jugadas",
                             color = GameMuted,
                             style = MaterialTheme.typography.bodySmall,
                         )
