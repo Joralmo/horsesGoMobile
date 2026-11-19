@@ -9,8 +9,7 @@ documenta la arquitectura y las versiones de las dependencias.
 2. Preparar Android SDK 36 y un dispositivo o emulador de 64 bits con
    Android API 23 o superior.
 3. En una Mac con Apple Silicon, preparar Xcode y un simulador iOS ARM64.
-   Xcode 26.4 es la referencia documentada del compilador Kotlin. El proyecto
-   configura un mínimo de iOS 15 para los SDKs de Xcode 27.
+   El mínimo de la aplicación y de su framework compartido es iOS 15.
 
 ```bash
 java -version
@@ -49,6 +48,18 @@ desde el emulador o dispositivo.
 Registrar versiones, dispositivos y resultados con la revisión de
 implementación. El [contrato de interacción](contracts/gameplay.md)
 describe los estados que deben observarse.
+
+## Validación del tablero Chessground
+
+En esta copia se probó la app instalada en un iPhone 17 simulado con iOS
+26.3 y un Pixel 8 Pro emulado con Android 16. En cada plataforma se cargaron
+los tres mapas, se tocó un destino legal y se comprobó la respuesta de la
+máquina. En el mapa de principiante se cerró y se volvió a abrir la app tras
+dos jugadas para comprobar las posiciones y las casillas destruidas.
+
+Las 18 pruebas compartidas pasaron en cada plataforma. Xcode 26.3 también
+compiló la app para iPhone físico ARM64 sin firma. El simulador, la
+compilación para dispositivo y el APK incluyen el mismo archivo de tablero.
 
 ## Resultados de implementación
 

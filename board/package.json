@@ -1,0 +1,16 @@
+{
+  "name": "@horsesgo/board",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline Horses Go board shell around the official Lichess Chessground package.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@lichess-org/chessground": "10.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  }
+}

@@ -1,0 +1,1165 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Horses Go</title>
+  <style>
+.cg-wrap {
+  box-sizing: content-box;
+  position: relative;
+  display: block;
+}
+
+cg-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: block;
+  top: 0;
+}
+
+cg-board {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  line-height: 0;
+  background-size: cover;
+}
+
+.cg-wrap.manipulable cg-board {
+  cursor: pointer;
+}
+
+cg-board square {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  pointer-events: none;
+}
+
+cg-board square.move-dest {
+  pointer-events: auto;
+}
+
+cg-board square.last-move {
+  will-change: transform;
+}
+
+.cg-wrap piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  background-size: cover;
+  z-index: 2;
+  will-change: transform;
+  pointer-events: none;
+}
+
+cg-board piece.dragging {
+  cursor: move;
+  /* !important to override z-index from 3D piece inline style */
+  z-index: 11 !important;
+}
+
+piece.anim {
+  z-index: 8;
+}
+
+piece.fading {
+  z-index: 1;
+  opacity: 0.5;
+}
+
+.cg-wrap piece.ghost {
+  opacity: 0.3;
+}
+
+.cg-wrap piece svg {
+  overflow: hidden;
+  position: relative;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.6;
+}
+
+.cg-wrap cg-auto-pieces,
+.cg-wrap .cg-shapes,
+.cg-wrap .cg-custom-svgs,
+.cg-wrap .cg-shapes-below,
+.cg-wrap .cg-custom-below {
+  overflow: visible;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cg-wrap cg-auto-pieces {
+  z-index: 2;
+}
+
+.cg-wrap cg-auto-pieces piece {
+  opacity: 0.3;
+}
+
+.cg-wrap .cg-shapes {
+  overflow: hidden;
+  opacity: 0.6;
+  z-index: 2;
+}
+
+.cg-wrap .cg-shapes-below {
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cg-wrap .cg-custom-below {
+  z-index: 1;
+}
+
+.cg-wrap .cg-custom-svgs {
+  /* over piece.anim = 8, but under piece.dragging = 11 */
+  z-index: 9;
+}
+
+.cg-wrap .cg-custom-svgs svg,
+.cg-wrap .cg-custom-below svg {
+  overflow: visible;
+}
+
+.cg-wrap coords {
+  position: absolute;
+  display: flex;
+  pointer-events: none;
+  opacity: 0.8;
+  font-family: sans-serif;
+  font-size: 9px;
+}
+
+.cg-wrap coords.ranks {
+  left: 4px;
+  top: -20px;
+  flex-flow: column-reverse;
+  height: 100%;
+  width: 12px;
+}
+
+.cg-wrap coords.ranks.black {
+  flex-flow: column;
+}
+
+.cg-wrap coords.ranks.left {
+  left: -15px;
+  align-items: flex-end;
+}
+
+.cg-wrap coords.files {
+  bottom: -4px;
+  left: 24px;
+  flex-flow: row;
+  width: 100%;
+  height: 16px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.cg-wrap coords.files.black {
+  flex-flow: row-reverse;
+}
+
+.cg-wrap coords coord {
+  flex: 1 1 auto;
+}
+
+.cg-wrap coords.ranks coord {
+  transform: translateY(39%);
+}
+
+.cg-wrap coords.squares {
+  bottom: 0;
+  left: 0;
+  text-transform: uppercase;
+  text-align: right;
+  flex-flow: column-reverse;
+  height: 100%;
+  width: 12.5%;
+}
+
+.cg-wrap coords.squares.black {
+  flex-flow: column;
+}
+
+.cg-wrap coords.squares.left {
+  text-align: left;
+}
+
+.cg-wrap coords.squares coord {
+  padding: 6% 4%;
+}
+
+.cg-wrap coords.squares.rank2 {
+  transform: translateX(100%);
+}
+
+.cg-wrap coords.squares.rank3 {
+  transform: translateX(200%);
+}
+
+.cg-wrap coords.squares.rank4 {
+  transform: translateX(300%);
+}
+
+.cg-wrap coords.squares.rank5 {
+  transform: translateX(400%);
+}
+
+.cg-wrap coords.squares.rank6 {
+  transform: translateX(500%);
+}
+
+.cg-wrap coords.squares.rank7 {
+  transform: translateX(600%);
+}
+
+.cg-wrap coords.squares.rank8 {
+  transform: translateX(700%);
+}
+
+/** Colored board squares as an embedded SVG */
+cg-board {
+  background-color: #f0d9b5;
+  background-image: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4PSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIgogICAgIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+CjxnIGlkPSJhIj4KICA8ZyBpZD0iYiI+CiAgICA8ZyBpZD0iYyI+CiAgICAgIDxnIGlkPSJkIj4KICAgICAgICA8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBpZD0iZSIgb3BhY2l0eT0iMCIvPgogICAgICAgIDx1c2UgeD0iMSIgeT0iMSIgaHJlZj0iI2UiIHg6aHJlZj0iI2UiLz4KICAgICAgICA8cmVjdCB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBpZD0iZiIgb3BhY2l0eT0iMC4yIi8+CiAgICAgICAgPHVzZSB4PSIxIiB5PSItMSIgaHJlZj0iI2YiIHg6aHJlZj0iI2YiLz4KICAgICAgPC9nPgogICAgICA8dXNlIHg9IjIiIGhyZWY9IiNkIiB4OmhyZWY9IiNkIi8+CiAgICA8L2c+CiAgICA8dXNlIHg9IjQiIGhyZWY9IiNjIiB4OmhyZWY9IiNjIi8+CiAgPC9nPgogIDx1c2UgeT0iMiIgaHJlZj0iI2IiIHg6aHJlZj0iI2IiLz4KPC9nPgo8dXNlIHk9IjQiIGhyZWY9IiNhIiB4OmhyZWY9IiNhIi8+Cjwvc3ZnPg==');
+}
+
+/** Interactive board square colors */
+cg-board square.move-dest {
+  background: radial-gradient(rgba(20, 85, 30, 0.5) 22%, #208530 0, rgba(0, 0, 0, 0.3) 0, rgba(0, 0, 0, 0) 0);
+}
+cg-board square.premove-dest {
+  background: radial-gradient(rgba(20, 30, 85, 0.5) 22%, #203085 0, rgba(0, 0, 0, 0.3) 0, rgba(0, 0, 0, 0) 0);
+}
+cg-board square.oc.move-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgba(20, 85, 0, 0.3) 80%);
+}
+cg-board square.oc.premove-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgba(20, 30, 85, 0.2) 80%);
+}
+cg-board square.move-dest:hover,
+cg-board square.move-dest.hover {
+  background: rgba(20, 85, 30, 0.3);
+}
+cg-board square.premove-dest:hover,
+cg-board square.premove-dest.hover {
+  background: rgba(20, 30, 85, 0.2);
+}
+cg-board square.last-move {
+  background-color: rgba(155, 199, 0, 0.41);
+}
+cg-board square.selected {
+  background-color: rgba(20, 85, 30, 0.5);
+}
+cg-board square.check {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 0, 1) 0%,
+    rgba(231, 0, 0, 1) 25%,
+    rgba(169, 0, 0, 0) 89%,
+    rgba(158, 0, 0, 0) 100%
+  );
+}
+cg-board square.current-premove {
+  background-color: rgba(20, 30, 85, 0.5);
+}
+
+/** Alternating colors in rank/file/square labels */
+.orientation-white .ranks :nth-child(odd),
+.orientation-white .files :nth-child(even),
+.orientation-black .ranks :nth-child(even),
+.orientation-black .files :nth-child(odd),
+coords.squares:nth-of-type(odd) :nth-child(even),
+coords.squares:nth-of-type(even) :nth-child(odd) {
+  color: rgba(72, 72, 72, 0.8);
+}
+
+.orientation-white .ranks :nth-child(even),
+.orientation-white .files :nth-child(odd),
+.orientation-black .ranks :nth-child(odd),
+.orientation-black .files :nth-child(even),
+coords.squares:nth-of-type(odd) :nth-child(odd),
+coords.squares:nth-of-type(even) :nth-child(even) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/** Embedded SVGs for all chess pieces */
+.cg-wrap piece.pawn.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==');
+}
+.cg-wrap piece.bishop.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIGZpbGw9IiNmZmYiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjM5LS45NyAxMC4xMS40MyAxMy41LTIgMy4zOSAyLjQzIDEwLjExIDEuMDMgMTMuNSAyIDAgMCAxLjY1LjU0IDMgMi0uNjguOTctMS42NS45OS0zIC41LTMuMzktLjk3LTEwLjExLjQ2LTEzLjUtMS0zLjM5IDEuNDYtMTAuMTEuMDMtMTMuNSAxLTEuMzU0LjQ5LTIuMzIzLjQ3LTMtLjUgMS4zNTQtMS45NCAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBkPSJNMTcuNSAyNmgxME0xNSAzMGgxNW0tNy41LTE0LjV2NU0yMCAxOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PC9nPjwvc3ZnPg==');
+}
+.cg-wrap piece.knight.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjMDAwIi8+PC9nPjwvc3ZnPg==');
+}
+.cg-wrap piece.rook.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik05IDM5aDI3di0zSDl2M3ptMy0zdi00aDIxdjRIMTJ6bS0xLTIyVjloNHYyaDVWOWg1djJoNVY5aDR2NSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNMzQgMTRsLTMgM0gxNGwtMy0zIi8+PHBhdGggZD0iTTMxIDE3djEyLjVIMTRWMTciIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMxIDI5LjVsMS41IDIuNWgtMjBsMS41LTIuNSIvPjxwYXRoIGQ9Ik0xMSAxNGgyMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjwvZz48L3N2Zz4=');
+}
+.cg-wrap piece.queen.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik04IDEyYTIgMiAwIDEgMS00IDAgMiAyIDAgMSAxIDQgMHptMTYuNS00LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwek00MSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTE2IDguNWEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTMzIDlhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAweiIvPjxwYXRoIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi0xMi03IDExVjExbC01LjUgMTMuNS0zLTE1LTMgMTUtNS41LTE0VjI1TDcgMTRsMiAxMnoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTkgMjZjMCAyIDEuNSAyIDIuNSA0IDEgMS41IDEgMSAuNSAzLjUtMS41IDEtMS41IDIuNS0xLjUgMi41LTEuNSAxLjUuNSAyLjUuNSAyLjUgNi41IDEgMTYuNSAxIDIzIDAgMCAwIDEuNS0xIDAtMi41IDAgMCAuNS0xLjUtMS0yLjUtLjUtMi41LS41LTIgLjUtMy41IDEtMiAyLjUtMiAyLjUtNC04LjUtMS41LTE4LjUtMS41LTI3IDB6IiBzdHJva2UtbGluZWNhcD0iYnV0dCIvPjxwYXRoIGQ9Ik0xMS41IDMwYzMuNS0xIDE4LjUtMSAyMiAwTTEyIDMzLjVjNi0xIDE1LTEgMjEgMCIgZmlsbD0ibm9uZSIvPjwvZz48L3N2Zz4=');
+}
+.cg-wrap piece.king.white {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTIyLjUgMjVzNC41LTcuNSAzLTEwLjVjMCAwLTEtMi41LTMtMi41cy0zIDIuNS0zIDIuNWMtMS41IDMgMyAxMC41IDMgMTAuNSIgZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==');
+}
+.cg-wrap piece.pawn.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==');
+}
+.cg-wrap piece.bishop.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIGZpbGw9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjM5LS45NyAxMC4xMS40MyAxMy41LTIgMy4zOSAyLjQzIDEwLjExIDEuMDMgMTMuNSAyIDAgMCAxLjY1LjU0IDMgMi0uNjguOTctMS42NS45OS0zIC41LTMuMzktLjk3LTEwLjExLjQ2LTEzLjUtMS0zLjM5IDEuNDYtMTAuMTEuMDMtMTMuNSAxLTEuMzU0LjQ5LTIuMzIzLjQ3LTMtLjUgMS4zNTQtMS45NCAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBkPSJNMTcuNSAyNmgxME0xNSAzMGgxNW0tNy41LTE0LjV2NU0yMCAxOGg1IiBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48L2c+PC9zdmc+');
+}
+.cg-wrap piece.knight.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjZWNlY2VjIiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMjQuNTUgMTAuNGwtLjQ1IDEuNDUuNS4xNWMzLjE1IDEgNS42NSAyLjQ5IDcuOSA2Ljc1UzM1Ljc1IDI5LjA2IDM1LjI1IDM5bC0uMDUuNWgyLjI1bC4wNS0uNWMuNS0xMC4wNi0uODgtMTYuODUtMy4yNS0yMS4zNC0yLjM3LTQuNDktNS43OS02LjY0LTkuMTktNy4xNmwtLjUxLS4xeiIgZmlsbD0iI2VjZWNlYyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==');
+}
+.cg-wrap piece.rook.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik05IDM5aDI3di0zSDl2M3ptMy41LTdsMS41LTIuNWgxN2wxLjUgMi41aC0yMHptLS41IDR2LTRoMjF2NEgxMnoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTE0IDI5LjV2LTEzaDE3djEzSDE0eiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTQgMTYuNUwxMSAxNGgyM2wtMyAyLjVIMTR6TTExIDE0VjloNHYyaDVWOWg1djJoNVY5aDR2NUgxMXoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTEyIDM1LjVoMjFtLTIwLTRoMTltLTE4LTJoMTdtLTE3LTEzaDE3TTExIDE0aDIzIiBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjwvZz48L3N2Zz4=');
+}
+.cg-wrap piece.queen.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIHN0cm9rZT0ibm9uZSI+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMTQiIGN5PSI5IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMjIuNSIgY3k9IjgiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzMSIgY3k9IjkiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzOSIgY3k9IjEyIiByPSIyLjc1Ii8+PC9nPjxwYXRoIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi41LTEyLjVMMzEgMjVsLS4zLTE0LjEtNS4yIDEzLjYtMy0xNC41LTMgMTQuNS01LjItMTMuNkwxNCAyNSA2LjUgMTMuNSA5IDI2eiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNOSAyNmMwIDIgMS41IDIgMi41IDQgMSAxLjUgMSAxIC41IDMuNS0xLjUgMS0xLjUgMi41LTEuNSAyLjUtMS41IDEuNS41IDIuNS41IDIuNSA2LjUgMSAxNi41IDEgMjMgMCAwIDAgMS41LTEgMC0yLjUgMCAwIC41LTEuNS0xLTIuNS0uNS0yLjUtLjUtMiAuNS0zLjUgMS0yIDIuNS0yIDIuNS00LTguNS0xLjUtMTguNS0xLjUtMjcgMHoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTExIDM4LjVhMzUgMzUgMSAwIDAgMjMgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNMTEgMjlhMzUgMzUgMSAwIDEgMjMgMG0tMjEuNSAyLjVoMjBtLTIxIDNhMzUgMzUgMSAwIDAgMjIgMG0tMjMgM2EzNSAzNSAxIDAgMCAyNCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiLz48L2c+PC9zdmc+');
+}
+.cg-wrap piece.king.black {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjYiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMjIuNSAyNXM0LjUtNy41IDMtMTAuNWMwIDAtMS0yLjUtMy0yLjVzLTMgMi41LTMgMi41Yy0xLjUgMyAzIDEwLjUgMyAxMC41IiBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjxwYXRoIGQ9Ik0xMS41IDM3YzUuNSAzLjUgMTUuNSAzLjUgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMFYzN3oiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMyIDI5LjVzOC41LTQgNi4wMy05LjY1QzM0LjE1IDE0IDI1IDE4IDIyLjUgMjQuNWwuMDEgMi4xLS4wMS0yLjFDMjAgMTggOS45MDYgMTQgNi45OTcgMTkuODVjLTIuNDk3IDUuNjUgNC44NTMgOSA0Ljg1MyA5IiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiIHN0cm9rZT0iI2VjZWNlYyIvPjwvZz48L3N2Zz4=');
+}
+
+/* Horses Go board presentation. Chessground's GPL CSS is prepended by build.mjs. */
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: transparent;
+  color: #273c36;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100vw;
+  background: transparent;
+}
+
+body {
+  display: block;
+}
+
+main {
+  width: 100%;
+  height: 100vw;
+}
+
+#board-frame {
+  --board-size: 8;
+  --zoom: 1;
+  position: relative;
+  width: 100%;
+  height: 100vw;
+  overflow: hidden;
+  background: transparent;
+  contain: strict;
+  touch-action: manipulation;
+}
+
+/* Chessground remains a real 8×8 board. We zoom and crop it to the active
+   4×4 or 6×6 map so no out-of-map cell can be seen or touched. */
+#ground.cg-wrap {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(var(--zoom) * 100%);
+  height: calc(var(--zoom) * 100%);
+  box-sizing: border-box;
+}
+
+#cell-grid {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(var(--board-size), minmax(0, 1fr));
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#cell-grid > [role="row"] {
+  display: grid;
+  grid-template-columns: repeat(var(--board-size), minmax(0, 1fr));
+}
+
+.cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: transparent;
+  background: transparent;
+  font: inherit;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell.legal {
+  pointer-events: auto;
+  cursor: pointer;
+  background: radial-gradient(circle, rgba(28, 101, 65, .72) 0 17%, rgba(28, 101, 65, .24) 18% 31%, transparent 32%);
+}
+
+.cell.legal:focus-visible {
+  box-shadow: inset 0 0 0 4px #f6d365;
+}
+
+.cell.destroyed {
+  background-color: #3e5950;
+  background-image:
+    linear-gradient(54deg, transparent 44%, rgba(188, 208, 189, .8) 46%, rgba(188, 208, 189, .8) 49%, transparent 51%),
+    linear-gradient(122deg, transparent 47%, rgba(188, 208, 189, .7) 49%, rgba(188, 208, 189, .7) 51%, transparent 53%);
+}
+
+.cell.file-edge::before,
+.cell.rank-edge::after {
+  position: absolute;
+  z-index: 2;
+  color: #3e2a1d;
+  font-size: clamp(10px, 2.8vw, 14px);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cell.destroyed::before,
+.cell.destroyed::after {
+  color: #fff5e3;
+}
+
+.cell.file-edge::before {
+  content: attr(data-file);
+  right: 4px;
+  bottom: 3px;
+}
+
+.cell.rank-edge::after {
+  content: attr(data-rank);
+  top: 3px;
+  left: 4px;
+}
+
+
+  </style>
+<!-- Chessground 10.5.0, GPL-3.0-or-later. Cburnett pieces: Colin M. L. Burnett, GPLv2+. See THIRD_PARTY.md. -->
+</head>
+<body>
+  <main>
+    <div id="board-frame">
+      <div id="ground" class="cg-wrap" aria-hidden="true"></div>
+      <div id="cell-grid" role="grid" aria-label="Tablero Horses Go"></div>
+    </div>
+  </main>
+  <script type="module">
+var We=["white","black"];var Z=["a","b","c","d","e","f","g","h"],X=["1","2","3","4","5","6","7","8"];var Ie=[...X].reverse(),Q=Z.flatMap(e=>X.map(o=>e+o)),L=e=>e.every(o=>o>=0&&o<=7)?Q[8*e[0]+e[1]]:void 0,j=e=>L(e),v=e=>[e.charCodeAt(0)-97,e.charCodeAt(1)-49];var ge=Q.map(v),je=Q.map((e,o)=>({key:e,pos:ge[o]}));function be(e){let o,r=()=>(o===void 0&&(o=e()),o);return r.clear=()=>{o=void 0},r}var Ve=()=>{let e;return{start(){e=performance.now()},cancel(){e=void 0},stop(){if(!e)return 0;let o=performance.now()-e;return e=void 0,o}}},V=e=>e==="white"?"black":"white",G=(e,o)=>(e[0]-o[0])**2+(e[1]-o[1])**2,J=(e,o)=>e.role===o.role&&e.color===o.color,Ge=(e,o)=>e[0]===o[0]&&e[1]===o[1],U=e=>(o,r)=>[(r?o[0]:7-o[0])*e.width/8,(r?7-o[1]:o[1])*e.height/8],T=(e,o)=>{e.style.transform=`translate(${o[0]}px,${o[1]}px)`},ve=(e,o,r=1)=>{e.style.transform=`translate(${o[0]}px,${o[1]}px) scale(${r})`},R=(e,o)=>{e.style.display=o?"":"none"},z=e=>{if(e.clientX||e.clientX===0)return[e.clientX,e.clientY];if(e.targetTouches?.[0])return[e.targetTouches[0].clientX,e.targetTouches[0].clientY]},rr=be(()=>!("ontouchstart"in window)&&["macintosh","firefox"].every(e=>navigator.userAgent.toLowerCase().includes(e))),ie=e=>e.button===2&&!(e.ctrlKey&&rr()),B=(e,o)=>{let r=document.createElement(e);return o&&(r.className=o),r};function se(e,o,r){let n=v(e);return o||(n[0]=7-n[0],n[1]=7-n[1]),[r.left+r.width*n[0]/8+r.width/16,r.top+r.height*(7-n[1])/8+r.height/16]}var H=(e,o)=>Math.abs(e-o),le=(e,o,r,n)=>H(e,r)*H(o,n)===2,we=(e,o,r,n)=>e===r!=(o===n),ye=(e,o,r,n)=>H(e,r)===H(o,n)&&e!==r,Ue=(e,o,r,n)=>we(e,o,r,n)||ye(e,o,r,n),Ze=(e,o,r,n)=>Math.max(H(e,r),H(o,n))===1;var _e=(e,o,r,n,t)=>{let i=t?1:-1;return e===r&&(n===o+i||n===o+2*i&&(t?o<=1:o>=6))},Xe=(e,o,r,n)=>{let t=r-e,i=n-o;if(t&&i&&Math.abs(t)!==Math.abs(i))return[];let l=Math.sign(t),d=Math.sign(i),u=[],s=e+l,a=o+d;for(;s!==r||a!==n;)u.push([s,a]),s+=l,a+=d;return u.map(L).filter(c=>c!==void 0)};var W=(e,o)=>o.animation.enabled?ir(e,o):F(e,o);function F(e,o){let r=e(o);return o.dom.redraw(),r}var Pe=(e,o)=>({key:e,pos:v(e),piece:o}),nr=(e,o)=>o.sort((r,n)=>G(e.pos,r.pos)-G(e.pos,n.pos))[0];function tr(e,o){let r=new Map,n=[],t=new Map,i=[],l=[],d=new Map,u,s,a;for(let[c,b]of e)d.set(c,Pe(c,b));for(let c of Q)u=o.pieces.get(c),s=d.get(c),u?s?J(u,s.piece)||(i.push(s),l.push(Pe(c,u))):l.push(Pe(c,u)):s&&i.push(s);for(let c of l)s=nr(c,i.filter(b=>J(c.piece,b.piece))),s&&(a=[s.pos[0]-c.pos[0],s.pos[1]-c.pos[1]],r.set(c.key,a.concat(a)),n.push(s.key));for(let c of i)n.includes(c.key)||t.set(c.key,c.piece);return{anims:r,fadings:t}}function Ye(e,o){let r=e.animation.current;if(r===void 0){e.dom.destroyed||e.dom.redrawNow();return}let n=1-(o-r.start)*r.frequency;if(n<=0)e.animation.current=void 0,e.dom.redrawNow();else{let t=sr(n);for(let i of r.plan.anims.values())i[2]=i[0]*t,i[3]=i[1]*t;e.dom.redrawNow(!0),requestAnimationFrame((i=performance.now())=>Ye(e,i))}}function ir(e,o){let r=new Map(o.pieces),n=e(o),t=tr(r,o);if(t.anims.size||t.fadings.size){let i=o.animation.current&&o.animation.current.start;o.animation.current={start:performance.now(),frequency:1/o.animation.duration,plan:t},i||Ye(o,performance.now())}else o.dom.redraw();return n}var sr=e=>e<.5?4*e*e*e:(e-1)*(2*e-2)*(2*e-2)+1;var lr=e=>H(e.orig.pos[0],e.dest.pos[0])<=1&&(H(e.orig.pos[0],e.dest.pos[0])===1?e.dest.pos[1]===e.orig.pos[1]+(e.color==="white"?1:-1):_e(...e.orig.pos,...e.dest.pos,e.color==="white")),ar=e=>le(...e.orig.pos,...e.dest.pos),Qe=e=>ye(...e.orig.pos,...e.dest.pos),Je=e=>we(...e.orig.pos,...e.dest.pos),cr=e=>Qe(e)||Je(e),dr=e=>Ze(...e.orig.pos,...e.dest.pos)||e.orig.pos[1]===e.dest.pos[1]&&e.orig.pos[1]===(e.color==="white"?0:7)&&(e.orig.pos[0]===4&&(e.dest.pos[0]===2&&e.rookFilesFriendlies.includes(0)||e.dest.pos[0]===6&&e.rookFilesFriendlies.includes(7))||e.rookFilesFriendlies.includes(e.dest.pos[0])),ur={pawn:lr,knight:ar,bishop:Qe,rook:Je,queen:cr,king:dr};function ke(e,o){let r=e.pieces,n=r.get(o);if(!n||n.color===e.turnColor)return[];let t=n.color,i=new Map([...r].filter(([a,c])=>c.color===t)),l=new Map([...r].filter(([a,c])=>c.color===V(t))),d={key:o,pos:v(o)},u=a=>ur[n.role](a)&&e.premovable.additionalPremoveRequirements(a),s={orig:d,role:n.role,allPieces:r,friendlies:i,enemies:l,color:t,rookFilesFriendlies:Array.from(r).filter(([a,c])=>a[1]===(t==="white"?"1":"8")&&c.color===t&&c.role==="rook").map(([a])=>v(a)[0]),lastMove:e.lastMove};return je.filter(a=>u({...s,dest:a})).map(a=>a.key)}function q(e,...o){e&&setTimeout(()=>e(...o),1)}function eo(e){e.orientation=V(e.orientation),e.animation.current=e.draggable.current=e.selected=void 0}function oo(e,o){for(let[r,n]of o)n?e.pieces.set(r,n):e.pieces.delete(r)}function ro(e,o){if(e.check=void 0,o===!0&&(o=e.turnColor),o)for(let[r,n]of e.pieces)n.role==="king"&&n.color===o&&(e.check=r)}function pr(e,o,r,n){$(e),e.premovable.current=[o,r],q(e.premovable.events.set,o,r,n)}function O(e){e.premovable.current&&(e.premovable.current=void 0,q(e.premovable.events.unset))}function fr(e,o,r){O(e),e.predroppable.current={role:o,key:r},q(e.predroppable.events.set,o,r)}function $(e){let o=e.predroppable;o.current&&(o.current=void 0,q(o.events.unset))}function mr(e,o,r){if(!e.autoCastle)return!1;let n=e.pieces.get(o);if(!n||n.role!=="king")return!1;let t=v(o),i=v(r);if(t[1]!==0&&t[1]!==7||t[1]!==i[1])return!1;t[0]===4&&!e.pieces.has(r)&&(i[0]===6?r=j([7,i[1]]):i[0]===2&&(r=j([0,i[1]])));let l=e.pieces.get(r);return!l||l.color!==n.color||l.role!=="rook"?!1:(e.pieces.delete(o),e.pieces.delete(r),t[0]<i[0]?(e.pieces.set(j([6,i[1]]),n),e.pieces.set(j([5,i[1]]),l)):(e.pieces.set(j([2,i[1]]),n),e.pieces.set(j([3,i[1]]),l)),!0)}function hr(e,o,r){let n=e.pieces.get(o);if(!n||n.role!=="pawn")return;let t=v(o),i=v(r);if(t[0]===i[0]||e.pieces.has(r))return;let l=L([i[0],t[1]]);if(!l)return;let d=e.pieces.get(l);if(!(!d||d.color===n.color||d.role!=="pawn"))return e.pieces.delete(l),d}function Ce(e,o,r){let n=e.pieces.get(o),t=e.pieces.get(r);if(o===r||!n)return!1;let i=t&&t.color!==n.color?t:hr(e,o,r);return r===e.selected&&A(e),q(e.events.move,o,r,i),mr(e,o,r)||(e.pieces.set(r,n),e.pieces.delete(o)),e.lastMove=[o,r],e.check=void 0,q(e.events.change),i||!0}function ae(e,o,r,n){if(e.pieces.has(r))if(n)e.pieces.delete(r);else return!1;return q(e.events.dropNewPiece,o,r),e.pieces.set(r,o),e.lastMove=[r],e.check=void 0,q(e.events.change),e.movable.dests=void 0,e.turnColor=V(e.turnColor),!0}function no(e,o,r){let n=Ce(e,o,r);return n&&(e.movable.dests=void 0,e.turnColor=V(e.turnColor),e.animation.current=void 0),n}function xe(e,o,r){if(de(e,o,r)){let n=no(e,o,r);if(n){let t=e.hold.stop();A(e);let i={premove:!1,ctrlKey:e.stats.ctrlKey,holdTime:t};return n!==!0&&(i.captured=n),q(e.movable.events.after,o,r,i),!0}}else if(br(e,o,r))return pr(e,o,r,{ctrlKey:e.stats.ctrlKey}),A(e),!0;return A(e),!1}function ce(e,o,r,n){let t=e.pieces.get(o);t&&(gr(e,o,r)||n)?(e.pieces.delete(o),ae(e,t,r,n),q(e.movable.events.afterNewPiece,t.role,r,{premove:!1,predrop:!1})):t&&vr(e,o,r)?fr(e,t.role,r):(O(e),$(e)),e.pieces.delete(o),A(e)}function ee(e,o,r){if(q(e.events.select,o),e.selected){if(e.selected===o&&!e.draggable.enabled){A(e),e.hold.cancel();return}else if((e.selectable.enabled||r)&&e.selected!==o&&xe(e,e.selected,o)){e.stats.dragged=!1;return}}(e.selectable.enabled||e.draggable.enabled)&&(to(e,o)||Me(e,o))&&(Se(e,o),e.hold.start())}function Se(e,o){e.selected=o,Me(e,o)?e.premovable.customDests||(e.premovable.dests=ke(e,o)):e.premovable.dests=void 0}function A(e){e.selected=void 0,e.premovable.dests=void 0,e.hold.cancel()}function to(e,o){let r=e.pieces.get(o);return!!r&&(e.movable.color==="both"||e.movable.color===r.color&&e.turnColor===r.color)}var de=(e,o,r)=>o!==r&&to(e,o)&&(e.movable.free||!!e.movable.dests?.get(o)?.includes(r));function gr(e,o,r){let n=e.pieces.get(o);return!!n&&(o===r||!e.pieces.has(r))&&(e.movable.color==="both"||e.movable.color===n.color&&e.turnColor===n.color)}function Me(e,o){let r=e.pieces.get(o);return!!r&&e.premovable.enabled&&e.movable.color===r.color&&e.turnColor!==r.color}var br=(e,o,r)=>o!==r&&Me(e,o)&&(e.premovable.customDests?.get(o)??ke(e,o)).includes(r);function vr(e,o,r){let n=e.pieces.get(o),t=e.pieces.get(r);return!!n&&(!t||t.color!==e.movable.color)&&e.predroppable.enabled&&(n.role!=="pawn"||r[1]!=="1"&&r[1]!=="8")&&e.movable.color===n.color&&e.turnColor!==n.color}function io(e,o){let r=e.pieces.get(o);return!!r&&e.draggable.enabled&&(e.movable.color==="both"||e.movable.color===r.color&&(e.turnColor===r.color||e.premovable.enabled))}function so(e){let o=e.premovable.current;if(!o)return!1;let r=o[0],n=o[1],t=!1;if(de(e,r,n)){let i=no(e,r,n);if(i){let l={premove:!0};i!==!0&&(l.captured=i),q(e.movable.events.after,r,n,l),t=!0}}return O(e),t}function lo(e,o){let r=e.predroppable.current,n=!1;if(!r)return!1;if(o(r)){let t={role:r.role,color:e.movable.color};ae(e,t,r.key)&&(q(e.movable.events.afterNewPiece,r.role,r.key,{premove:!1,predrop:!0}),n=!0)}return $(e),n}function oe(e){O(e),$(e),A(e)}function De(e){e.movable.color=e.movable.dests=e.animation.current=void 0,oe(e)}function N(e,o,r){let n=Math.floor(8*(e[0]-r.left)/r.width);o||(n=7-n);let t=7-Math.floor(8*(e[1]-r.top)/r.height);return o||(t=7-t),n>=0&&n<8&&t>=0&&t<8?L([n,t]):void 0}function ao(e,o,r,n){let t=v(e),i=ge.filter(s=>Ge(t,s)||Ue(t[0],t[1],s[0],s[1])||le(t[0],t[1],s[0],s[1])),d=i.map(s=>se(j(s),r,n)).map(s=>G(o,s)),[,u]=d.reduce((s,a,c)=>s[0]<a?s:[a,c],[d[0],0]);return L(i[u])}var k=e=>e.orientation==="white";var qe="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",wr={p:"pawn",r:"rook",n:"knight",b:"bishop",q:"queen",k:"king"},yr={pawn:"p",rook:"r",knight:"n",bishop:"b",queen:"q",king:"k"};function ue(e){e==="start"&&(e=qe);let o=new Map,r=7,n=0;for(let t of e)switch(t){case" ":case"[":return o;case"/":if(--r,r<0)return o;n=0;break;case"~":{let i=L([n-1,r]),l=i&&o.get(i);l&&(l.promoted=!0);break}default:{let i=t.charCodeAt(0);if(i<57)n+=i-48;else{let l=t.toLowerCase(),d=L([n,r]);d&&o.set(d,{role:wr[l],color:t===l?"black":"white"}),++n}}}return o}function co(e){return Ie.map(o=>Z.map(r=>{let n=e.get(r+o);if(n){let t=yr[n.role];return n.color==="white"&&(t=t.toUpperCase()),n.promoted&&(t+="~"),t}else return"1"}).join("")).join("/").replace(/1{2,}/g,o=>o.length.toString())}function Ee(e,o){o.animation&&(Ke(e.animation,o.animation),(e.animation.duration||0)<70&&(e.animation.enabled=!1))}function pe(e,o){if(o.movable?.dests&&(e.movable.dests=void 0),o.drawable?.autoShapes&&(e.drawable.autoShapes=[]),Ke(e,o),o.fen&&(e.pieces=ue(o.fen),e.drawable.shapes=o.drawable?.shapes||[]),"check"in o&&ro(e,o.check||!1),"lastMove"in o&&!o.lastMove?e.lastMove=void 0:o.lastMove&&(e.lastMove=o.lastMove),e.selected&&Se(e,e.selected),Ee(e,o),!e.movable.rookCastle&&e.movable.dests){let r=e.movable.color==="white"?"1":"8",n="e"+r,t=e.movable.dests.get(n),i=e.pieces.get(n);if(!t||!i||i.role!=="king")return;e.movable.dests.set(n,t.filter(l=>!(l==="a"+r&&t.includes("c"+r))&&!(l==="h"+r&&t.includes("g"+r))))}}function Ke(e,o){for(let r in o)r==="__proto__"||r==="constructor"||!Object.prototype.hasOwnProperty.call(o,r)||(Object.prototype.hasOwnProperty.call(e,r)&&uo(e[r])&&uo(o[r])?Ke(e[r],o[r]):e[r]=o[r])}function uo(e){if(typeof e!="object"||e===null)return!1;let o=Object.getPrototypeOf(e);return o===Object.prototype||o===null}var kr=["green","red","blue","yellow"];function po(e,o){if(o.touches&&o.touches.length>1)return;o.stopPropagation(),o.preventDefault(),o.ctrlKey?A(e):oe(e);let r=z(o),n=N(r,k(e),e.dom.bounds());n&&(e.drawable.current={orig:n,pos:r,brush:Cr(o),snapToValidMove:e.drawable.defaultSnapToValidMove},fo(e))}function fo(e){requestAnimationFrame(()=>{let o=e.drawable.current;if(o){let r=N(o.pos,k(e),e.dom.bounds());r||(o.snapToValidMove=!1);let n=o.snapToValidMove?ao(o.orig,o.pos,k(e),e.dom.bounds()):r;n!==o.mouseSq&&(o.mouseSq=n,o.dest=n!==o.orig?n:void 0,e.dom.redrawNow()),fo(e)}})}function mo(e,o){e.drawable.current&&(e.drawable.current.pos=z(o))}function ho(e){let o=e.drawable.current;o&&(o.mouseSq&&xr(e.drawable,o),Te(e))}function Te(e){e.drawable.current&&(e.drawable.current=void 0,e.dom.redraw())}function go(e){e.drawable.shapes.length&&(e.drawable.shapes=[],e.dom.redraw(),bo(e.drawable))}var fe=(e,o)=>e.orig===o.orig&&e.dest===o.dest,Be=(e,o)=>e.brush===o.brush;function Cr(e){let o=(e.shiftKey||e.ctrlKey)&&ie(e),r=e.altKey||e.metaKey||e.getModifierState?.("AltGraph");return kr[(o?1:0)+(r?2:0)]}function xr(e,o){let r=e.shapes.find(n=>fe(n,o));r&&(e.shapes=e.shapes.filter(n=>!fe(n,o))),(!r||!Be(r,o))&&e.shapes.push({orig:o.orig,dest:o.dest,brush:o.brush}),bo(e)}function bo(e){e.onChange&&e.onChange(e.shapes)}function vo(e,o){if(!(e.trustAllEvents||o.isTrusted)||o.buttons!==void 0&&o.buttons>1||o.touches&&o.touches.length>1)return;let r=e.dom.bounds(),n=z(o),t=N(n,k(e),r);if(!t)return;let i=e.pieces.get(t),l=e.selected;if(!l&&e.drawable.enabled&&(e.drawable.eraseOnMovablePieceClick||!i||i.color!==e.turnColor)&&go(e),o.cancelable!==!1&&(!o.touches||e.blockTouchScroll||i||l||Mr(e,n)))o.preventDefault();else if(o.touches)return;let d=!!e.premovable.current,u=!!e.predroppable.current;e.stats.ctrlKey=o.ctrlKey,e.selected&&de(e,e.selected,t)?W(c=>ee(c,t),e):ee(e,t);let s=e.selected===t,a=Co(e,t);if(i&&a&&s&&io(e,t)){e.draggable.current={orig:t,piece:i,origPos:n,pos:n,started:e.draggable.autoDistance&&e.stats.dragged,element:a,previouslySelected:l,originTarget:o.target,keyHasChanged:!1},a.cgDragging=!0,a.classList.add("dragging");let c=e.dom.elements.ghost;c&&(c.className=`ghost ${i.color} ${i.role}`,T(c,U(r)(v(t),k(e))),R(c,!0)),Oe(e)}else d&&O(e),u&&$(e);e.dom.redraw()}function Mr(e,o){let r=k(e),n=e.dom.bounds(),t=Math.pow(e.touchIgnoreRadius*n.width/16,2)*2;for(let i of e.pieces.keys()){let l=se(i,r,n);if(G(l,o)<=t)return!0}return!1}function wo(e,o,r,n){e.pieces.set("a0",o),e.dom.redraw();let i=z(r);e.draggable.current={orig:"a0",piece:o,origPos:i,pos:i,started:!0,element:()=>Co(e,"a0"),originTarget:r.target,newPiece:!0,force:!!n,keyHasChanged:!1},Oe(e)}function Oe(e){requestAnimationFrame(()=>{let o=e.draggable.current;if(!o)return;e.animation.current?.plan.anims.has(o.orig)&&(e.animation.current=void 0);let r=e.pieces.get(o.orig);if(!r||!J(r,o.piece))_(e);else if(!o.started&&G(o.pos,o.origPos)>=Math.pow(e.draggable.distance,2)&&(o.started=!0),o.started){if(typeof o.element=="function"){let t=o.element();if(!t)return;t.cgDragging=!0,t.classList.add("dragging"),o.element=t}let n=e.dom.bounds();T(o.element,[o.pos[0]-n.left-n.width/16,o.pos[1]-n.top-n.height/16]),e.jsHover?Dr(e,o):o.keyHasChanged||(o.keyHasChanged=o.orig!==N(o.pos,k(e),n))}Oe(e)})}function Dr(e,o){let r=N(o.pos,k(e),e.dom.bounds());if(o.orig!==r){if(o.keyHasChanged=!0,r)if(e.movable.dests?.get(o.orig)?.includes(r)??e.premovable.dests?.includes(r)){let t=e.dom.elements.board.querySelector(`.move-dest[data-key="${r}"], .premove-dest[data-key="${r}"]`);t&&!t.classList.contains("hover")&&(Ne(e),t.classList.add("hover"))}else Ne(e)}else Ne(e)}function Ne(e){let o=e.dom.elements.board.querySelectorAll(".move-dest, .premove-dest");o.length>0&&o.forEach(r=>r.classList.remove("hover"))}function yo(e,o){e.draggable.current&&(!o.touches||o.touches.length<2)&&(e.draggable.current.pos=z(o))}function Po(e,o){let r=e.draggable.current;if(!r)return;if(o.type==="touchend"&&o.cancelable!==!1&&o.preventDefault(),o.type==="touchend"&&r.originTarget!==o.target&&!r.newPiece){e.draggable.current=void 0;return}O(e),$(e);let n=z(o)||r.pos,t=N(n,k(e),e.dom.bounds());t&&r.started&&r.orig!==t?r.newPiece?ce(e,r.orig,t,r.force):(e.stats.ctrlKey=o.ctrlKey,xe(e,r.orig,t)&&(e.stats.dragged=!0)):r.newPiece?e.pieces.delete(r.orig):e.draggable.deleteOnDropOff&&!t&&(e.pieces.delete(r.orig),q(e.events.change)),(r.orig===r.previouslySelected||r.keyHasChanged)&&(r.orig===t||!t)?A(e):e.selectable.enabled||A(e),ko(e),e.draggable.current=void 0,e.dom.redraw()}function _(e){let o=e.draggable.current;o&&(o.newPiece&&e.pieces.delete(o.orig),e.draggable.current=void 0,A(e),ko(e),e.dom.redraw())}function ko(e){let o=e.dom.elements;o.ghost&&R(o.ghost,!1)}function Co(e,o){let r=e.dom.elements.board.firstChild;for(;r;){if(r.cgKey===o&&r.tagName==="PIECE")return r;r=r.nextSibling}}function So(e,o){e.exploding={stage:1,keys:o},e.dom.redraw(),setTimeout(()=>{xo(e,2),setTimeout(()=>xo(e,void 0),120)},120)}function xo(e,o){e.exploding&&(o?e.exploding.stage=o:e.exploding=void 0,e.dom.redraw())}function Mo(e,o){function r(){eo(e),o()}return{set(n){n.orientation&&n.orientation!==e.orientation&&r(),Ee(e,n),(n.fen?W:F)(t=>pe(t,n),e)},state:e,getFen:()=>co(e.pieces),toggleOrientation:r,setPieces(n){W(t=>oo(t,n),e)},selectSquare(n,t){n?W(i=>ee(i,n,t),e):e.selected&&(A(e),e.dom.redraw())},move(n,t){W(i=>Ce(i,n,t),e)},newPiece(n,t){W(i=>ae(i,n,t),e)},playPremove(){if(e.premovable.current){if(W(so,e))return!0;e.dom.redraw()}return!1},playPredrop(n){if(e.predroppable.current){let t=lo(e,n);return e.dom.redraw(),t}return!1},cancelPremove(){F(O,e)},cancelPredrop(){F($,e)},cancelMove(){F(n=>{oe(n),_(n)},e)},stop(){F(n=>{De(n),_(n)},e)},explode(n){So(e,n)},setAutoShapes(n){F(t=>t.drawable.autoShapes=n,e)},setShapes(n){F(t=>t.drawable.shapes=n.slice(),e)},getKeyAtDomPos(n){return N(n,k(e),e.dom.bounds())},redrawAll:o,dragNewPiece(n,t,i){wo(e,n,t,i)},destroy(){De(e),e.dom.unbind?.(),e.dom.destroyed=!0}}}function Do(e,o,r){let n=new Map,t=[];for(let d of e)n.set(d.hash,!1);let i=o.firstElementChild,l;for(;i;)l=i.getAttribute("cgHash"),n.has(l)?n.set(l,!0):t.push(i),i=i.nextElementSibling;for(let d of t)o.removeChild(d);for(let d of e)n.get(d.hash)||o.appendChild(r(d))}function Ao(e,o){let n=e.drawable.autoShapes.filter(t=>t.piece).map(t=>({shape:t,hash:Er(t),current:!1,pendingErase:!1}));Do(n,o,t=>qr(e,t,e.dom.bounds()))}function qo(e){let o=k(e),r=U(e.dom.bounds()),n=e.dom.elements.autoPieces?.firstChild;for(;n;)ve(n,r(v(n.cgKey),o),n.cgScale),n=n.nextSibling}function qr(e,{shape:o,hash:r},n){let t=o.orig,i=o.piece?.role,l=o.piece?.color,d=o.piece?.scale,u=B("piece",`${i} ${l}`);return u.setAttribute("cgHash",r),u.cgKey=t,u.cgScale=d,ve(u,U(n)(v(t),k(e)),d),u}var Er=e=>[e.orig,e.piece?.role,e.piece?.color,e.piece?.scale].join(",");function Eo(e,o){if(!e.dropmode.active)return;O(e),$(e);let r=e.dropmode.piece;if(r){e.pieces.set("a0",r);let n=z(o),t=n&&N(n,k(e),e.dom.bounds());t&&ce(e,"a0",t)}e.dom.redraw()}function To(e){let o=e.dom.elements.board;if((e.disableContextMenu||e.drawable.enabled)&&o.addEventListener("contextmenu",n=>n.preventDefault()),e.viewOnly)return;let r=Tr(e);o.addEventListener("touchstart",r,{passive:!1}),o.addEventListener("mousedown",r,{passive:!1})}function Bo(e,o){let r=[];if("ResizeObserver"in window){let n=new ResizeObserver(o);n.observe(e.dom.elements.wrap),r.push(()=>n.disconnect())}else r.push(re(document.body,"chessground.resize",o));if(!e.viewOnly){let n=Ko(e,yo,mo),t=Ko(e,Po,ho);for(let l of["touchmove","mousemove"])r.push(re(document,l,n));for(let l of["touchend","mouseup"])r.push(re(document,l,t));let i=()=>e.dom.bounds.clear();r.push(re(document,"scroll",i,{capture:!0,passive:!0})),r.push(re(window,"resize",i,{passive:!0}))}return()=>r.forEach(n=>n())}function re(e,o,r,n){return e.addEventListener(o,r,n),()=>e.removeEventListener(o,r,n)}var Tr=e=>o=>{e.draggable.current?_(e):e.drawable.current?Te(e):o.shiftKey||ie(o)?e.drawable.enabled&&po(e,o):e.viewOnly||(e.dropmode.active?Eo(e,o):vo(e,o))},Ko=(e,o,r)=>n=>{e.drawable.current?e.drawable.enabled&&r(e,n):e.viewOnly||o(e,n)};function No(e){let o=k(e),r=U(e.dom.bounds()),n=e.dom.elements.board,t=e.pieces,i=e.animation.current,l=i?i.plan.anims:new Map,d=i?i.plan.fadings:new Map,u=e.draggable.current,s=new Set,a=new Map,c=$r(e),b=new Map,h,f,p,w,m,S,P,y,E;for(f=n.firstChild;f;){if(h=f.cgKey,$o(f))if(p=t.get(h),m=l.get(h),S=d.get(h),w=f.cgPiece,f.cgDragging&&(!u||u.orig!==h)&&(f.classList.remove("dragging"),T(f,r(v(h),o)),f.cgDragging=!1),!S&&f.cgFading&&(f.cgFading=!1,f.classList.remove("fading")),p){if(m&&f.cgAnimating&&w===ne(p)){let g=v(h);g[0]+=m[2],g[1]+=m[3],f.classList.add("anim"),T(f,r(g,o))}else f.cgAnimating&&(f.cgAnimating=!1,f.classList.remove("anim"),T(f,r(v(h),o)),e.addPieceZIndex&&(f.style.zIndex=$e(v(h),o)));w===ne(p)&&(!S||!f.cgFading)?s.add(h):S&&w===ne(S)?(f.classList.add("fading"),f.cgFading=!0):ze(a,w,f)}else ze(a,w,f);else if(zo(f)){let g=f.className;c.get(h)===g?(R(f,!0),c.delete(h)):ze(b,g,f)}f=f.nextSibling}for(let[g,M]of c){E=b.get(M)?.pop();let K=r(v(g),o);if(E)E.cgKey=g,e.jsHover&&(E.dataset.key=g),T(E,K),R(E,!0);else{let D=B("square",M);D.cgKey=g,e.jsHover&&(D.dataset.key=g),T(D,K),n.insertBefore(D,n.firstChild)}}for(let[,g]of b.entries())for(let M of g)R(M,!1);for(let[g,M]of t)if(m=l.get(g),!s.has(g))if(P=a.get(ne(M)),y=P&&P.pop(),y){y.cgKey=g,y.cgFading&&(y.classList.remove("fading"),y.cgFading=!1);let K=v(g);e.addPieceZIndex&&(y.style.zIndex=$e(K,o)),m&&(y.cgAnimating=!0,y.classList.add("anim"),K[0]+=m[2],K[1]+=m[3]),T(y,r(K,o))}else{let K=ne(M),D=B("piece",K),te=v(g);D.cgPiece=K,D.cgKey=g,m&&(D.cgAnimating=!0,te[0]+=m[2],te[1]+=m[3]),T(D,r(te,o)),e.addPieceZIndex&&(D.style.zIndex=$e(te,o)),n.appendChild(D)}for(let g of a.values())Nr(e,g)}function Oo(e){let o=k(e),r=U(e.dom.bounds()),n=e.dom.elements.board.firstChild;for(;n;)($o(n)&&!n.cgAnimating||zo(n))&&T(n,r(v(n.cgKey),o)),n=n.nextSibling}function He(e){let o=e.dom.elements.wrap.getBoundingClientRect(),r=e.dom.elements.container,n=o.height/o.width,t=Math.floor(o.width*window.devicePixelRatio/8)*8/window.devicePixelRatio,i=t*n;r.style.width=t+"px",r.style.height=i+"px",e.dom.bounds.clear(),e.addDimensionsCssVarsTo?.style.setProperty("---cg-width",t+"px"),e.addDimensionsCssVarsTo?.style.setProperty("---cg-height",i+"px")}var $o=e=>e.tagName==="PIECE",zo=e=>e.tagName==="SQUARE";function Nr(e,o){for(let r of o)e.dom.elements.board.removeChild(r)}function $e(e,o){let n=e[1];return`${o?10-n:3+n}`}var ne=e=>`${e.color} ${e.role}`,Or=(e,o)=>e.lastMove?.[1]&&!e.pieces.has(e.lastMove[1])&&e.lastMove[0][0]==="e"&&["h","a"].includes(e.lastMove[1][0])&&e.lastMove[0][1]===e.lastMove[1][1]&&Xe(...v(e.lastMove[0]),...v(e.lastMove[1])).some(r=>e.pieces.has(r))?(o>e.lastMove[0]?"g":"c")+o[1]:o;function $r(e){let o=new Map;if(e.lastMove&&e.highlight.lastMove)for(let[t,i]of e.lastMove.entries())I(o,t===1?Or(e,i):i,"last-move");if(e.check&&e.highlight.check&&I(o,e.check,"check"),e.selected&&(I(o,e.selected,"selected"),e.movable.showDests)){for(let t of e.movable.dests?.get(e.selected)??[])I(o,t,"move-dest"+(e.pieces.has(t)?" oc":""));for(let t of e.premovable.customDests?.get(e.selected)??e.premovable.dests??[])I(o,t,"premove-dest"+(e.pieces.has(t)?" oc":""))}let r=e.premovable.current;if(r)for(let t of r)I(o,t,"current-premove");else e.predroppable.current&&I(o,e.predroppable.current.key,"current-premove");let n=e.exploding;if(n)for(let t of n.keys)I(o,t,"exploding"+n.stage);return e.highlight.custom&&e.highlight.custom.forEach((t,i)=>{I(o,i,t)}),o}function I(e,o,r){let n=e.get(o);n?e.set(o,`${n} ${r}`):e.set(o,r)}function ze(e,o,r){let n=e.get(o);n?n.push(r):e.set(o,[r])}function Ho(){return{pieces:ue(qe),orientation:"white",turnColor:"white",coordinates:!0,coordinatesOnSquares:!1,ranksPosition:"right",autoCastle:!0,viewOnly:!1,disableContextMenu:!1,addPieceZIndex:!1,blockTouchScroll:!1,touchIgnoreRadius:1,pieceKey:!1,trustAllEvents:!1,jsHover:!1,highlight:{lastMove:!0,check:!0},animation:{enabled:!0,duration:200},movable:{free:!0,color:"both",showDests:!0,events:{},rookCastle:!0},premovable:{enabled:!0,showDests:!0,castle:!0,additionalPremoveRequirements:e=>!0,events:{}},predroppable:{enabled:!1,events:{}},draggable:{enabled:!0,distance:3,autoDistance:!0,showGhost:!0,deleteOnDropOff:!1},dropmode:{active:!1},selectable:{enabled:!0},stats:{dragged:!("ontouchstart"in window)},events:{},drawable:{enabled:!0,visible:!0,defaultSnapToValidMove:!0,eraseOnMovablePieceClick:!0,shapes:[],autoShapes:[],brushes:{green:{key:"g",color:"#15781B",opacity:1,lineWidth:10},red:{key:"r",color:"#882020",opacity:1,lineWidth:10},blue:{key:"b",color:"#003088",opacity:1,lineWidth:10},yellow:{key:"y",color:"#e68f00",opacity:1,lineWidth:10},paleBlue:{key:"pb",color:"#003088",opacity:.4,lineWidth:15},paleGreen:{key:"pg",color:"#15781B",opacity:.4,lineWidth:15},paleRed:{key:"pr",color:"#882020",opacity:.4,lineWidth:15},paleGrey:{key:"pgr",color:"#4a4a4a",opacity:.35,lineWidth:15},purple:{key:"purple",color:"#68217a",opacity:.65,lineWidth:10},pink:{key:"pink",color:"#ee2080",opacity:.5,lineWidth:10},white:{key:"white",color:"white",opacity:1,lineWidth:10},paleWhite:{key:"pwhite",color:"white",opacity:.6,lineWidth:10},variation:{key:"variation",color:"white",opacity:.5,lineWidth:12}},prevSvgHash:""},hold:Ve()}}function Fo(){let e=C("defs"),o=x(C("filter"),{id:"cg-filter-blur"});return o.appendChild(x(C("feGaussianBlur"),{stdDeviation:"0.013"})),e.appendChild(o),e}function Io(e,o){let r=e.drawable,n=r.current,t=n&&n.mouseSq?n:void 0,i=new Map,l=e.dom.bounds(),d=r.autoShapes.filter(c=>!c.piece);for(let c of r.shapes.concat(d).concat(t?[t]:[])){if(!c.dest)continue;let b=i.get(c.dest)??new Set,h=he(me(v(c.orig),e.orientation),l),f=he(me(v(c.dest),e.orientation),l);b.add(Xo(Yo(h,f))),i.set(c.dest,b)}let u=[],s=t?r.shapes.findIndex(c=>fe(c,t)&&Be(c,t)):-1;for(let[c,b]of r.shapes.concat(d).entries()){let h=s!==-1&&s===c;u.push({shape:b,current:!1,pendingErase:h,hash:Lo(b,Le(b.dest,i),!1,l,h,Wo(b.dest,i))})}t&&s===-1&&u.push({shape:t,current:!0,hash:Lo(t,Le(t.dest,i),!0,l,!1,Wo(t.dest,i)),pendingErase:!1});let a=u.map(c=>c.hash).join(";");a!==e.drawable.prevSvgHash&&(e.drawable.prevSvgHash=a,zr(r,u,o),Hr(u,o,c=>Wr(e,c,r.brushes,i,l)))}function zr(e,o,r){for(let n of[r.shapes,r.shapesBelow]){let t=n.querySelector("defs"),i=o.filter(s=>n===r.shapesBelow==!!s.shape.below),l=new Map;for(let s of i.filter(a=>a.shape.dest&&a.shape.brush)){let a=Uo(e.brushes[s.shape.brush],s.shape.modifiers),{key:c,color:b}=Zo(s.shape);c&&b&&l.set(c,{key:c,color:b,opacity:1,lineWidth:1}),l.set(a.key,a)}let d=new Set,u=t.firstElementChild;for(;u;)d.add(u.getAttribute("cgKey")),u=u.nextElementSibling;for(let[s,a]of l.entries())d.has(s)||t.appendChild(jr(a))}}function Hr(e,o,r){for(let[n,t]of[[o.shapes,o.custom],[o.shapesBelow,o.customBelow]]){let[i,l]=[n,t].map(s=>s.querySelector("g")),d=e.filter(s=>n===o.shapesBelow==!!s.shape.below),u=new Map;for(let s of d)u.set(s.hash,!1);for(let s of[i,l]){let a=[],c=s.firstElementChild,b;for(;c;)b=c.getAttribute("cgHash"),u.has(b)?u.set(b,!0):a.push(c),c=c.nextElementSibling;for(let h of a)s.removeChild(h)}for(let s of d.filter(a=>!u.get(a.hash)))for(let a of r(s))a.isCustom?l.appendChild(a.el):i.appendChild(a.el)}}function Lo({orig:e,dest:o,brush:r,piece:n,modifiers:t,customSvg:i,label:l,below:d},u,s,a,c,b){return[a.width,a.height,s,c&&"pendingErase",b,e,o,r,u&&"-",n&&Lr(n),t&&Rr(t),i&&`custom-${Ro(i.html)},${i.center?.[0]??"o"}`,l&&`label-${Ro(l.text)}`,d&&"below"].filter(Boolean).join(",")}var Lr=e=>[e.color,e.role,e.scale].filter(Boolean).join(","),Rr=e=>[e.lineWidth,e.hilite].filter(Boolean).join(",");function Ro(e){let o=0;for(let r=0;r<e.length;r++)o=(o<<5)-o+e.charCodeAt(r)>>>0;return o.toString()}function Wr(e,{shape:o,current:r,pendingErase:n,hash:t},i,l,d){let u=he(me(v(o.orig),e.orientation),d),s=o.dest?he(me(v(o.dest),e.orientation),d):u,a=o.brush&&Uo(i[o.brush],o.modifiers),c=l.get(o.dest),b=[];if(a){let h=x(C("g"),{cgHash:t});b.push({el:h}),u[0]!==s[0]||u[1]!==s[1]?h.appendChild(Ir(o,a,u,s,r,Le(o.dest,l),n)):h.appendChild(Fr(i[o.brush],u,r,d,n,o.modifiers?.hilite))}if(o.label){let h=o.label;h.fill??(h.fill=o.brush&&i[o.brush].color);let f=o.brush?void 0:"tr";b.push({el:Vr(h,t,u,s,c,f),isCustom:!0})}if(o.customSvg){let h=o.customSvg.center??"orig",[f,p]=h==="label"?Qo(u,s,c).map(m=>m-.5):h==="dest"?s:u,w=x(C("g"),{transform:`translate(${f},${p})`,cgHash:t});w.innerHTML=`<svg width="1" height="1" viewBox="0 0 100 100">${o.customSvg.html}</svg>`,b.push({el:w,isCustom:!0})}return b}function Fr(e,o,r,n,t,i){let l=Gr(),d=(n.width+n.height)/(4*Math.max(n.width,n.height));function u(c){return x(C("circle"),{stroke:c?i:e.color,"stroke-width":l[r?0:1]*(c?2:1),fill:"none",opacity:i&&!t?1:_o(e,r,t),cx:o[0],cy:o[1],r:d-l[1]/2})}if(!i)return u(!1);let s=x(C("g"),{opacity:e.opacity}),a=x(C("g"),{filter:"url(#cg-filter-blur)"});return a.appendChild(u(!0)),s.appendChild(a),s.appendChild(u(!1)),s}function Ir(e,o,r,n,t,i,l){function d(a){let c=Zr(i&&!t),b=n[0]-r[0],h=n[1]-r[1],f=Math.atan2(h,b),p=Math.cos(f)*c,w=Math.sin(f)*c,m=Zo(e);return x(C("line"),{stroke:a?m.color:o.color,"stroke-width":Ur(o,t)*(a?1.14:1),"stroke-linecap":"round","marker-end":`url(#arrowhead-${a?m.key:o.key})`,opacity:e.modifiers?.hilite&&!l?1:_o(o,t,l),x1:r[0],y1:r[1],x2:n[0]-p,y2:n[1]-w})}if(!e.modifiers?.hilite)return d(!1);let u=x(C("g"),{opacity:o.opacity}),s=x(C("g"),{filter:"url(#cg-filter-blur)"});return s.appendChild(_r(r,n)),s.appendChild(d(!0)),u.appendChild(s),u.appendChild(d(!1)),u}function jr(e){let o=x(C("marker"),{id:"arrowhead-"+e.key,orient:"auto",overflow:"visible",markerWidth:4,markerHeight:4,refX:e.key.startsWith("hilite")?1.86:2.05,refY:2});return o.appendChild(x(C("path"),{d:"M0,0 V4 L3,2 Z",fill:e.color})),o.setAttribute("cgKey",e.key),o}function Vr(e,o,r,n,t,i){let d=.4*.75**e.text.length,u=Qo(r,n,t),s=i==="tr"?.4:0,a=x(C("g"),{transform:`translate(${u[0]+s},${u[1]-s})`,cgHash:o});a.appendChild(x(C("circle"),{r:.4/2,"fill-opacity":i?1:.8,"stroke-opacity":i?1:.7,"stroke-width":.03,fill:e.fill??"#666",stroke:"white"}));let c=x(C("text"),{"font-size":d,"font-family":"Noto Sans","text-anchor":"middle",fill:"white",y:.13*.75**e.text.length});return c.innerHTML=e.text,a.appendChild(c),a}var me=(e,o)=>o==="white"?e:[7-e[0],7-e[1]],jo=(e,o)=>(e%o+o)%o,Vo=(e,o)=>jo(e+o,16),Go=e=>[...e].some(o=>[-3,-2,-1,1,2,3].some(r=>e.has(Vo(o,r)))),Le=(e,o)=>!!e&&o.has(e)&&Go(o.get(e)),C=e=>document.createElementNS("http://www.w3.org/2000/svg",e),Wo=(e,o)=>e&&o.has(e)?o.get(e).size:0;function x(e,o){for(let r in o)Object.prototype.hasOwnProperty.call(o,r)&&e.setAttribute(r,o[r]);return e}var Uo=(e,o)=>o?{color:e.color,opacity:Math.round(e.opacity*10)/10,lineWidth:Math.round(o.lineWidth||e.lineWidth),key:[e.key,o.lineWidth].filter(Boolean).join("")}:e,Gr=()=>[3/64,4/64],Ur=(e,o)=>(e.lineWidth||10)*(o?.85:1)/64;function Zo(e){let o=e.modifiers?.hilite;return{key:o&&`hilite-${o.replace("#","")}`,color:o}}var _o=(e,o,r)=>(e.opacity||1)*(r?.6:o?.9:1),Zr=e=>(e?20:10)/64;function he(e,o){let r=Math.min(1,o.width/o.height),n=Math.min(1,o.height/o.width);return[(e[0]-3.5)*r,(3.5-e[1])*n]}function _r(e,o){let r={from:[Math.floor(Math.min(e[0],o[0])),Math.floor(Math.min(e[1],o[1]))],to:[Math.ceil(Math.max(e[0],o[0])),Math.ceil(Math.max(e[1],o[1]))]};return x(C("rect"),{x:r.from[0],y:r.from[1],width:r.to[0]-r.from[0],height:r.to[1]-r.from[1],fill:"none",stroke:"none"})}var Xo=e=>jo(Math.round(e*8/Math.PI),16),Yo=(e,o)=>Math.atan2(o[1]-e[1],o[0]-e[0])+Math.PI,Xr=(e,o)=>Math.sqrt([e[0]-o[0],e[1]-o[1]].reduce((r,n)=>r+n*n,0));function Qo(e,o,r){let n=Xr(e,o),t=Yo(e,o);if(r&&(n-=33/64,Go(r))){n-=10/64;let i=Xo(t);i&1&&[-1,1].some(l=>r.has(Vo(i,l)))&&(n-=.4)}return[e[0]-Math.cos(t)*n,e[1]-Math.sin(t)*n].map(i=>i+.5)}function er(e,o){e.innerHTML="",e.classList.add("cg-wrap");for(let a of We)e.classList.toggle("orientation-"+a,o.orientation===a);e.classList.toggle("manipulable",!o.viewOnly);let r=B("cg-container");e.appendChild(r);let n=B("cg-board");r.appendChild(n);let t,i,l,d,u;if(o.drawable.visible&&([t,i]=["cg-shapes-below","cg-shapes"].map(a=>Jo(a,!0)),[l,d]=["cg-custom-below","cg-custom-svgs"].map(a=>Jo(a,!1)),u=B("cg-auto-pieces"),r.appendChild(t),r.appendChild(l),r.appendChild(i),r.appendChild(d),r.appendChild(u)),o.coordinates){let a=o.orientation==="black"?" black":"",c=o.ranksPosition==="left"?" left":"";if(o.coordinatesOnSquares){let b=o.orientation==="white"?h=>h+1:h=>8-h;Z.forEach((h,f)=>r.appendChild(Re(X.map(p=>h+p),"squares rank"+b(f)+a+c,f%2===0?"black":"white")))}else r.appendChild(Re(X,"ranks"+a+c,o.ranksPosition==="right"==(o.orientation==="white")?"white":"black")),r.appendChild(Re(Z,"files"+a,V(o.orientation)))}let s;return!o.viewOnly&&o.draggable.enabled&&o.draggable.showGhost&&(s=B("piece","ghost"),R(s,!1),r.appendChild(s)),{board:n,container:r,wrap:e,ghost:s,shapes:i,shapesBelow:t,custom:d,customBelow:l,autoPieces:u}}function Jo(e,o){let r=x(C("svg"),{class:e,viewBox:o?"-4 -4 8 8":"-3.5 -3.5 8 8",preserveAspectRatio:"xMidYMid slice",style:"color-scheme:light only"});return o&&r.appendChild(Fo()),r.appendChild(C("g")),r}function Re(e,o,r){let n=B("coords",o),t;return e.forEach((i,l)=>{let d=l%2===(r==="white"?0:1);t=B("coord",`coord-${d?"light":"dark"}`),t.textContent=i,n.appendChild(t)}),n}function or(e,o){let r=Ho();pe(r,o||{});function n(){let t="dom"in r?r.dom.unbind:void 0,i=er(e,r),l=be(()=>i.board.getBoundingClientRect()),d=a=>{No(s),i.autoPieces&&Ao(s,i.autoPieces),!a&&i.shapes&&Io(s,i)},u=()=>{He(s),Oo(s),i.autoPieces&&qo(s)},s=r;return s.dom={elements:i,bounds:l,redraw:Qr(d),redrawNow:d,unbind:t},s.drawable.prevSvgHash="",He(s),d(!1),To(s),t||(s.dom.unbind=Bo(s,u)),s.events.insert?.(i),s}return Mo(n(),n)}function Qr(e){let o=!1;return()=>{o||(o=!0,requestAnimationFrame(()=>{e(),o=!1}))}}(function(){"use strict";let e="abcdefgh",o=new Set([4,6,8]),r=document.getElementById("board-frame"),n=document.getElementById("ground"),t=document.getElementById("cell-grid"),i=null,l=null,d=!1;function u(p,w){return e[w]+String(p+1)}function s(p,w){return typeof p=="string"&&/^[a-h][1-8]$/.test(p)&&e.indexOf(p[0])<w&&Number(p[1])<=w}function a(p){return p===1?"casilla destruida":p===2?"caballo negro":p===3?"caballo blanco":"casilla libre"}function c(p){if(!p||!Array.isArray(p.cells))return null;let w=p.cells.length;if(!o.has(w)||p.cells.some(P=>!Array.isArray(P)||P.length!==w)||p.cells.some(P=>P.some(y=>typeof y!="number"||!Number.isInteger(y))))return null;let m=p.cells.map(P=>P.slice());if(m.some(P=>P.some(y=>![0,1,2,3].includes(y))))return null;let S=new Set(Array.isArray(p.legal)?p.legal.filter(P=>s(P,w)):[]);return{cells:m,size:w,legal:S,canPlay:p.canPlay===!0}}function b(p,w){let m=[];for(let S=8;S>=1;S-=1){let P=S-1;if(P>=w){m.push("8");continue}let y=0,E="";for(let g=0;g<8;g+=1){let M=g<w?p[P][g]:0;M===0||M===1?y+=1:(y&&(E+=String(y)),y=0,E+=M===2?"n":"N")}y&&(E+=String(y)),m.push(E)}return m.join("/")+" w - - 0 1"}function h(p){if(!l||!l.canPlay||d||!l.legal.has(p))return;d=!0;let w=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.horsesGo;if(w&&typeof w.postMessage=="function"){w.postMessage(p);return}let m=window.HorsesGo;if(m&&typeof m.play=="function"){m.play(p);return}d=!1}function f(p){t.replaceChildren(),t.style.setProperty("--board-size",String(p.size)),t.setAttribute("aria-label",`Tablero Horses Go ${p.size} por ${p.size}`);let w=document.createDocumentFragment();for(let m=p.size-1;m>=0;m-=1){let S=document.createElement("div");S.setAttribute("role","row");for(let P=0;P<p.size;P+=1){let y=u(m,P),E=p.cells[m][P],g=document.createElement("div"),M=p.canPlay&&p.legal.has(y),K=`${m===0?" file-edge":""}${P===0?" rank-edge":""}`;g.className=`cell${E===1?" destroyed":""}${M?" legal":""}${K}`,g.dataset.key=y,g.dataset.file=e[P].toUpperCase(),g.dataset.rank=String(m+1),g.setAttribute("role","gridcell"),g.setAttribute("aria-label",`${y.toUpperCase()}, ${a(E)}${M?", destino legal":""}`),g.setAttribute("aria-disabled",M?"false":"true"),g.tabIndex=0,M&&(g.addEventListener("click",()=>h(y)),g.addEventListener("keydown",D=>{(D.key==="Enter"||D.key===" ")&&(D.preventDefault(),h(y))})),S.appendChild(g)}w.appendChild(S)}t.appendChild(w)}window.renderBoard=function(w){let m=c(w);if(!m)return!1;l=m,d=!1;let S=8/m.size;r.style.setProperty("--board-size",String(m.size)),r.style.setProperty("--zoom",String(S)),f(m);let P=b(m.cells,m.size);return i?i.set({fen:P,viewOnly:!0,orientation:"white",animation:{enabled:!1}}):i=or(n,{fen:P,orientation:"white",coordinates:!1,viewOnly:!0,animation:{enabled:!1}}),!0}})();
+
+  </script>
+</body>
+<!-- Full Chessground GPL-3.0-or-later license, reproduced from the pinned npm package.
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+                            Preamble
+
+  The GNU General Public License is a free, copyleft license for
+software and other kinds of works.
+
+  The licenses for most software and other practical works are designed
+to take away your freedom to share and change the works.  By contrast,
+the GNU General Public License is intended to guarantee your freedom to
+share and change all versions of a program—to make sure it remains free
+software for all its users.  We, the Free Software Foundation, use the
+GNU General Public License for most of our software; it applies also to
+any other work released this way by its authors.  You can apply it to
+your programs, too.
+
+  When we speak of free software, we are referring to freedom, not
+price.  Our General Public Licenses are designed to make sure that you
+have the freedom to distribute copies of free software (and charge for
+them if you wish), that you receive source code or can get it if you
+want it, that you can change the software or use pieces of it in new
+free programs, and that you know you can do these things.
+
+  To protect your rights, we need to prevent others from denying you
+these rights or asking you to surrender the rights.  Therefore, you have
+certain responsibilities if you distribute copies of the software, or if
+you modify it: responsibilities to respect the freedom of others.
+
+  For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must pass on to the recipients the same
+freedoms that you received.  You must make sure that they, too, receive
+or can get the source code.  And you must show them these terms so they
+know their rights.
+
+  Developers that use the GNU GPL protect your rights with two steps:
+(1) assert copyright on the software, and (2) offer you this License
+giving you legal permission to copy, distribute and/or modify it.
+
+  For the developers' and authors' protection, the GPL clearly explains
+that there is no warranty for this free software.  For both users' and
+authors' sake, the GPL requires that modified versions be marked as
+changed, so that their problems will not be attributed erroneously to
+authors of previous versions.
+
+  Some devices are designed to deny users access to install or run
+modified versions of the software inside them, although the manufacturer
+can do so.  This is fundamentally incompatible with the aim of
+protecting users' freedom to change the software.  The systematic
+pattern of such abuse occurs in the area of products for individuals to
+use, which is precisely where it is most unacceptable.  Therefore, we
+have designed this version of the GPL to prohibit the practice for those
+products.  If such problems arise substantially in other domains, we
+stand ready to extend this provision to those domains in future versions
+of the GPL, as needed to protect the freedom of users.
+
+  Finally, every program is threatened constantly by software patents.
+States should not allow patents to restrict development and use of
+software on general-purpose computers, but in those that do, we wish to
+avoid the special danger that patents applied to a free program could
+make it effectively proprietary.  To prevent this, the GPL assures that
+patents cannot be used to render the program non-free.
+
+  The precise terms and conditions for copying, distribution and
+modification follow.
+
+                       TERMS AND CONDITIONS
+
+  0. Definitions.
+
+  "This License" refers to version 3 of the GNU General Public License.
+
+  "Copyright" also means copyright-like laws that apply to other kinds of
+works, such as semiconductor masks.
+
+  "The Program" refers to any copyrightable work licensed under this
+License.  Each licensee is addressed as "you".  "Licensees" and
+"recipients" may be individuals or organizations.
+
+  To "modify" a work means to copy from or adapt all or part of the work
+in a fashion requiring copyright permission, other than the making of an
+exact copy.  The resulting work is called a "modified version" of the
+earlier work or a work "based on" the earlier work.
+
+  A "covered work" means either the unmodified Program or a work based
+on the Program.
+
+  To "propagate" a work means to do anything with it that, without
+permission, would make you directly or secondarily liable for
+infringement under applicable copyright law, except executing it on a
+computer or modifying a private copy.  Propagation includes copying,
+distribution (with or without modification), making available to the
+public, and in some countries other activities as well.
+
+  To "convey" a work means any kind of propagation that enables other
+parties to make or receive copies.  Mere interaction with a user through
+a computer network, with no transfer of a copy, is not conveying.
+
+  An interactive user interface displays "Appropriate Legal Notices"
+to the extent that it includes a convenient and prominently visible
+feature that (1) displays an appropriate copyright notice, and (2)
+tells the user that there is no warranty for the work (except to the
+extent that warranties are provided), that licensees may convey the
+work under this License, and how to view a copy of this License.  If
+the interface presents a list of user commands or options, such as a
+menu, a prominent item in the list meets this criterion.
+
+  1. Source Code.
+
+  The "source code" for a work means the preferred form of the work
+for making modifications to it.  "Object code" means any non-source
+form of a work.
+
+  A "Standard Interface" means an interface that either is an official
+standard defined by a recognized standards body, or, in the case of
+interfaces specified for a particular programming language, one that
+is widely used among developers working in that language.
+
+  The "System Libraries" of an executable work include anything, other
+than the work as a whole, that (a) is included in the normal form of
+packaging a Major Component, but which is not part of that Major
+Component, and (b) serves only to enable use of the work with that
+Major Component, or to implement a Standard Interface for which an
+implementation is available to the public in source code form.  A
+"Major Component", in this context, means a major essential component
+(kernel, window system, and so on) of the specific operating system
+(if any) on which the executable work runs, or a compiler used to
+produce the work, or an object code interpreter used to run it.
+
+  The "Corresponding Source" for a work in object code form means all
+the source code needed to generate, install, and (for an executable
+work) run the object code and to modify the work, including scripts to
+control those activities.  However, it does not include the work's
+System Libraries, or general-purpose tools or generally available free
+programs which are used unmodified in performing those activities but
+which are not part of the work.  For example, Corresponding Source
+includes interface definition files associated with source files for
+the work, and the source code for shared libraries and dynamically
+linked subprograms that the work is specifically designed to require,
+such as by intimate data communication or control flow between those
+subprograms and other parts of the work.
+
+  The Corresponding Source need not include anything that users
+can regenerate automatically from other parts of the Corresponding
+Source.
+
+  The Corresponding Source for a work in source code form is that
+same work.
+
+  2. Basic Permissions.
+
+  All rights granted under this License are granted for the term of
+copyright on the Program, and are irrevocable provided the stated
+conditions are met.  This License explicitly affirms your unlimited
+permission to run the unmodified Program.  The output from running a
+covered work is covered by this License only if the output, given its
+content, constitutes a covered work.  This License acknowledges your
+rights of fair use or other equivalent, as provided by copyright law.
+
+  You may make, run and propagate covered works that you do not
+convey, without conditions so long as your license otherwise remains
+in force.  You may convey covered works to others for the sole purpose
+of having them make modifications exclusively for you, or provide you
+with facilities for running those works, provided that you comply with
+the terms of this License in conveying all material for which you do
+not control copyright.  Those thus making or running the covered works
+for you must do so exclusively on your behalf, under your direction
+and control, on terms that prohibit them from making any copies of
+your copyrighted material outside their relationship with you.
+
+  Conveying under any other circumstances is permitted solely under
+the conditions stated below.  Sublicensing is not allowed; section 10
+makes it unnecessary.
+
+  3. Protecting Users' Legal Rights From Anti-Circumvention Law.
+
+  No covered work shall be deemed part of an effective technological
+measure under any applicable law fulfilling obligations under article
+11 of the WIPO copyright treaty adopted on 20 December 1996, or
+similar laws prohibiting or restricting circumvention of such
+measures.
+
+  When you convey a covered work, you waive any legal power to forbid
+circumvention of technological measures to the extent such circumvention
+is effected by exercising rights under this License with respect to
+the covered work, and you disclaim any intention to limit operation or
+modification of the work as a means of enforcing, against the work's
+users, your or third parties' legal rights to forbid circumvention of
+technological measures.
+
+  4. Conveying Verbatim Copies.
+
+  You may convey verbatim copies of the Program's source code as you
+receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy an appropriate copyright notice;
+keep intact all notices stating that this License and any
+non-permissive terms added in accord with section 7 apply to the code;
+keep intact all notices of the absence of any warranty; and give all
+recipients a copy of this License along with the Program.
+
+  You may charge any price or no price for each copy that you convey,
+and you may offer support or warranty protection for a fee.
+
+  5. Conveying Modified Source Versions.
+
+  You may convey a work based on the Program, or the modifications to
+produce it from the Program, in the form of source code under the
+terms of section 4, provided that you also meet all of these conditions:
+
+    a) The work must carry prominent notices stating that you modified
+    it, and giving a relevant date.
+
+    b) The work must carry prominent notices stating that it is
+    released under this License and any conditions added under section
+    7.  This requirement modifies the requirement in section 4 to
+    "keep intact all notices".
+
+    c) You must license the entire work, as a whole, under this
+    License to anyone who comes into possession of a copy.  This
+    License will therefore apply, along with any applicable section 7
+    additional terms, to the whole of the work, and all its parts,
+    regardless of how they are packaged.  This License gives no
+    permission to license the work in any other way, but it does not
+    invalidate such permission if you have separately received it.
+
+    d) If the work has interactive user interfaces, each must display
+    Appropriate Legal Notices; however, if the Program has interactive
+    interfaces that do not display Appropriate Legal Notices, your
+    work need not make them do so.
+
+  A compilation of a covered work with other separate and independent
+works, which are not by their nature extensions of the covered work,
+and which are not combined with it such as to form a larger program,
+in or on a volume of a storage or distribution medium, is called an
+"aggregate" if the compilation and its resulting copyright are not
+used to limit the access or legal rights of the compilation's users
+beyond what the individual works permit.  Inclusion of a covered work
+in an aggregate does not cause this License to apply to the other
+parts of the aggregate.
+
+  6. Conveying Non-Source Forms.
+
+  You may convey a covered work in object code form under the terms
+of sections 4 and 5, provided that you also convey the
+machine-readable Corresponding Source under the terms of this License,
+in one of these ways:
+
+    a) Convey the object code in, or embodied in, a physical product
+    (including a physical distribution medium), accompanied by the
+    Corresponding Source fixed on a durable physical medium
+    customarily used for software interchange.
+
+    b) Convey the object code in, or embodied in, a physical product
+    (including a physical distribution medium), accompanied by a
+    written offer, valid for at least three years and valid for as
+    long as you offer spare parts or customer support for that product
+    model, to give anyone who possesses the object code either (1) a
+    copy of the Corresponding Source for all the software in the
+    product that is covered by this License, on a durable physical
+    medium customarily used for software interchange, for a price no
+    more than your reasonable cost of physically performing this
+    conveying of source, or (2) access to copy the
+    Corresponding Source from a network server at no charge.
+
+    c) Convey individual copies of the object code with a copy of the
+    written offer to provide the Corresponding Source.  This
+    alternative is allowed only occasionally and noncommercially, and
+    only if you received the object code with such an offer, in accord
+    with subsection 6b.
+
+    d) Convey the object code by offering access from a designated
+    place (gratis or for a charge), and offer equivalent access to the
+    Corresponding Source in the same way through the same place at no
+    further charge.  You need not require recipients to copy the
+    Corresponding Source along with the object code.  If the place to
+    copy the object code is a network server, the Corresponding Source
+    may be on a different server (operated by you or a third party)
+    that supports equivalent copying facilities, provided you maintain
+    clear directions next to the object code saying where to find the
+    Corresponding Source.  Regardless of what server hosts the
+    Corresponding Source, you remain obligated to ensure that it is
+    available for as long as needed to satisfy these requirements.
+
+    e) Convey the object code using peer-to-peer transmission, provided
+    you inform other peers where the object code and Corresponding
+    Source of the work are being offered to the general public at no
+    charge under subsection 6d.
+
+  A separable portion of the object code, whose source code is excluded
+from the Corresponding Source as a System Library, need not be
+included in conveying the object code work.
+
+  A "User Product" is either (1) a "consumer product", which means any
+tangible personal property which is normally used for personal, family,
+or household purposes, or (2) anything designed or sold for incorporation
+into a dwelling.  In determining whether a product is a consumer product,
+doubtful cases shall be resolved in favor of coverage.  For a particular
+product received by a particular user, "normally used" refers to a
+typical or common use of that class of product, regardless of the status
+of the particular user or of the way in which the particular user
+actually uses, or expects or is expected to use, the product.  A product
+is a consumer product regardless of whether the product has substantial
+commercial, industrial or non-consumer uses, unless such uses represent
+the only significant mode of use of the product.
+
+  "Installation Information" for a User Product means any methods,
+procedures, authorization keys, or other information required to install
+and execute modified versions of a covered work in that User Product from
+a modified version of its Corresponding Source.  The information must
+suffice to ensure that the continued functioning of the modified object
+code is in no case prevented or interfered with solely because
+modification has been made.
+
+  If you convey an object code work under this section in, or with, or
+specifically for use in, a User Product, and the conveying occurs as
+part of a transaction in which the right of possession and use of the
+User Product is transferred to the recipient in perpetuity or for a
+fixed term (regardless of how the transaction is characterized), the
+Corresponding Source conveyed under this section must be accompanied
+by the Installation Information.  But this requirement does not apply
+if neither you nor any third party retains the ability to install
+modified object code on the User Product (for example, the work has
+been installed in ROM).
+
+  The requirement to provide Installation Information does not include a
+requirement to continue to provide support service, warranty, or updates
+for a work that has been modified or installed by the recipient, or for
+the User Product in which it has been modified or installed.  Access to a
+network may be denied when the modification itself materially and
+adversely affects the operation of the network or violates the rules and
+protocols for communication across the network.
+
+  Corresponding Source conveyed, and Installation Information provided,
+in accord with this section must be in a format that is publicly
+documented (and with an implementation available to the public in
+source code form), and must require no special password or key for
+unpacking, reading or copying.
+
+  7. Additional Terms.
+
+  "Additional permissions" are terms that supplement the terms of this
+License by making exceptions from one or more of its conditions.
+Additional permissions that are applicable to the entire Program shall
+be treated as though they were included in this License, to the extent
+that they are valid under applicable law.  If additional permissions
+apply only to part of the Program, that part may be used separately
+under those permissions, but the entire Program remains governed by
+this License without regard to the additional permissions.
+
+  When you convey a copy of a covered work, you may at your option
+remove any additional permissions from that copy, or from any part of
+it.  (Additional permissions may be written to require their own
+removal in certain cases when you modify the work.)  You may place
+additional permissions on material, added by you to a covered work,
+for which you have or can give appropriate copyright permission.
+
+  Notwithstanding any other provision of this License, for material you
+add to a covered work, you may (if authorized by the copyright holders of
+that material) supplement the terms of this License with terms:
+
+    a) Disclaiming warranty or limiting liability differently from the
+    terms of sections 15 and 16 of this License; or
+
+    b) Requiring preservation of specified reasonable legal notices or
+    author attributions in that material or in the Appropriate Legal
+    Notices displayed by works containing it; or
+
+    c) Prohibiting misrepresentation of the origin of that material, or
+    requiring that modified versions of such material be marked in
+    reasonable ways as different from the original version; or
+
+    d) Limiting the use for publicity purposes of names of licensors or
+    authors of the material; or
+
+    e) Declining to grant rights under trademark law for use of some
+    trade names, trademarks, or service marks; or
+
+    f) Requiring indemnification of licensors and authors of that
+    material by anyone who conveys the material (or modified versions of
+    it) with contractual assumptions of liability to the recipient, for
+    any liability that these contractual assumptions directly impose on
+    those licensors and authors.
+
+  All other non-permissive additional terms are considered "further
+restrictions" within the meaning of section 10.  If the Program as you
+received it, or any part of it, contains a notice stating that it is
+governed by this License along with a term that is a further
+restriction, you may remove that term.  If a license document contains
+a further restriction but permits relicensing or conveying under this
+License, you may add to a covered work material governed by the terms
+of that license document, provided that the further restriction does
+not survive such relicensing or conveying.
+
+  If you add terms to a covered work in accord with this section, you
+must place, in the relevant source files, a statement of the
+additional terms that apply to those files, or a notice indicating
+where to find the applicable terms.
+
+  Additional terms, permissive or non-permissive, may be stated in the
+form of a separately written license, or stated as exceptions;
+the above requirements apply either way.
+
+  8. Termination.
+
+  You may not propagate or modify a covered work except as expressly
+provided under this License.  Any attempt otherwise to propagate or
+modify it is void, and will automatically terminate your rights under
+this License (including any patent licenses granted under the third
+paragraph of section 11).
+
+  However, if you cease all violation of this License, then your
+license from a particular copyright holder is reinstated (a)
+provisionally, unless and until the copyright holder explicitly and
+finally terminates your license, and (b) permanently, if the copyright
+holder fails to notify you of the violation by some reasonable means
+prior to 60 days after the cessation.
+
+  Moreover, your license from a particular copyright holder is
+reinstated permanently if the copyright holder notifies you of the
+violation by some reasonable means, this is the first time you have
+received notice of violation of this License (for any work) from that
+copyright holder, and you cure the violation prior to 30 days after
+your receipt of the notice.
+
+  Termination of your rights under this section does not terminate the
+licenses of parties who have received copies or rights from you under
+this License.  If your rights have been terminated and not permanently
+reinstated, you do not qualify to receive new licenses for the same
+material under section 10.
+
+  9. Acceptance Not Required for Having Copies.
+
+  You are not required to accept this License in order to receive or
+run a copy of the Program.  Ancillary propagation of a covered work
+occurring solely as a consequence of using peer-to-peer transmission
+to receive a copy likewise does not require acceptance.  However,
+nothing other than this License grants you permission to propagate or
+modify any covered work.  These actions infringe copyright if you do
+not accept this License.  Therefore, by modifying or propagating a
+covered work, you indicate your acceptance of this License to do so.
+
+  10. Automatic Licensing of Downstream Recipients.
+
+  Each time you convey a covered work, the recipient automatically
+receives a license from the original licensors, to run, modify and
+propagate that work, subject to this License.  You are not responsible
+for enforcing compliance by third parties with this License.
+
+  An "entity transaction" is a transaction transferring control of an
+organization, or substantially all assets of one, or subdividing an
+organization, or merging organizations.  If propagation of a covered
+work results from an entity transaction, each party to that
+transaction who receives a copy of the work also receives whatever
+licenses to the work the party's predecessor in interest had or could
+give under the previous paragraph, plus a right to possession of the
+Corresponding Source of the work from the predecessor in interest, if
+the predecessor has it or can get it with reasonable efforts.
+
+  You may not impose any further restrictions on the exercise of the
+rights granted or affirmed under this License.  For example, you may
+not impose a license fee, royalty, or other charge for exercise of
+rights granted under this License, and you may not initiate litigation
+(including a cross-claim or counterclaim in a lawsuit) alleging that
+any patent claim is infringed by making, using, selling, offering for
+sale, or importing the Program or any portion of it.
+
+  11. Patents.
+
+  A "contributor" is a copyright holder who authorizes use under this
+License of the Program or a work on which the Program is based.  The
+work thus licensed is called the contributor's "contributor version".
+
+  A contributor's "essential patent claims" are all patent claims
+owned or controlled by the contributor, whether already acquired or
+hereafter acquired, that would be infringed by some manner, permitted
+by this License, of making, using, or selling its contributor version,
+but do not include claims that would be infringed only as a
+consequence of further modification of the contributor version.  For
+purposes of this definition, "control" includes the right to grant
+patent sublicenses in a manner consistent with the requirements of
+this License.
+
+  Each contributor grants you a non-exclusive, worldwide, royalty-free
+patent license under the contributor's essential patent claims, to
+make, use, sell, offer for sale, import and otherwise run, modify and
+propagate the contents of its contributor version.
+
+  In the following three paragraphs, a "patent license" is any express
+agreement or commitment, however denominated, not to enforce a patent
+(such as an express permission to practice a patent or covenant not to
+sue for patent infringement).  To "grant" such a patent license to a
+party means to make such an agreement or commitment not to enforce a
+patent against the party.
+
+  If you convey a covered work, knowingly relying on a patent license,
+and the Corresponding Source of the work is not available for anyone
+to copy, free of charge and under the terms of this License, through a
+publicly available network server or other readily accessible means,
+then you must either (1) cause the Corresponding Source to be so
+available, or (2) arrange to deprive yourself of the benefit of the
+patent license for this particular work, or (3) arrange, in a manner
+consistent with the requirements of this License, to extend the patent
+license to downstream recipients.  "Knowingly relying" means you have
+actual knowledge that, but for the patent license, your conveying the
+covered work in a country, or your recipient's use of the covered work
+in a country, would infringe one or more identifiable patents in that
+country that you have reason to believe are valid.
+
+  If, pursuant to or in connection with a single transaction or
+arrangement, you convey, or propagate by procuring conveyance of, a
+covered work, and grant a patent license to some of the parties
+receiving the covered work authorizing them to use, propagate, modify
+or convey a specific copy of the covered work, then the patent license
+you grant is automatically extended to all recipients of the covered
+work and works based on it.
+
+  A patent license is "discriminatory" if it does not include within
+the scope of its coverage, prohibits the exercise of, or is
+conditioned on the non-exercise of one or more of the rights that are
+specifically granted under this License.  You may not convey a covered
+work if you are a party to an arrangement with a third party that is
+in the business of distributing software, under which you make payment
+to the third party based on the extent of your activity of conveying
+the work, and under which the third party grants, to any of the
+parties who would receive the covered work from you, a discriminatory
+patent license (a) in connection with copies of the covered work
+conveyed by you (or copies made from those copies), or (b) primarily
+for and in connection with specific products or compilations that
+contain the covered work, unless you entered into that arrangement,
+or that patent license was granted, prior to 28 March 2007.
+
+  Nothing in this License shall be construed as excluding or limiting
+any implied license or other defenses to infringement that may
+otherwise be available to you under applicable patent law.
+
+  12. No Surrender of Others' Freedom.
+
+  If conditions are imposed on you (whether by court order, agreement or
+otherwise) that contradict the conditions of this License, they do not
+excuse you from the conditions of this License.  If you cannot convey a
+covered work so as to satisfy simultaneously your obligations under this
+License and any other pertinent obligations, then as a consequence you may
+not convey it at all.  For example, if you agree to terms that obligate you
+to collect a royalty for further conveying from those to whom you convey
+the Program, the only way you could satisfy both those terms and this
+License would be to refrain entirely from conveying the Program.
+
+  13. Use with the GNU Affero General Public License.
+
+  Notwithstanding any other provision of this License, you have
+permission to link or combine any covered work with a work licensed
+under version 3 of the GNU Affero General Public License into a single
+combined work, and to convey the resulting work.  The terms of this
+License will continue to apply to the part which is the covered work,
+but the special requirements of the GNU Affero General Public License,
+section 13, concerning interaction through a network will apply to the
+combination as such.
+
+  14. Revised Versions of this License.
+
+  The Free Software Foundation may publish revised and/or new versions of
+the GNU General Public License from time to time.  Such new versions will
+be similar in spirit to the present version, but may differ in detail to
+address new problems or concerns.
+
+  Each version is given a distinguishing version number.  If the
+Program specifies that a certain numbered version of the GNU General
+Public License "or any later version" applies to it, you have the
+option of following the terms and conditions either of that numbered
+version or of any later version published by the Free Software
+Foundation.  If the Program does not specify a version number of the
+GNU General Public License, you may choose any version ever published
+by the Free Software Foundation.
+
+  If the Program specifies that a proxy can decide which future
+versions of the GNU General Public License can be used, that proxy's
+public statement of acceptance of a version permanently authorizes you
+to choose that version for the Program.
+
+  Later license versions may give you additional or different
+permissions.  However, no additional obligations are imposed on any
+author or copyright holder as a result of your choosing to follow a
+later version.
+
+  15. Disclaimer of Warranty.
+
+  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
+HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
+OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
+IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
+ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+  16. Limitation of Liability.
+
+  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
+THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
+PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
+EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+  17. Interpretation of Sections 15 and 16.
+
+  If the disclaimer of warranty and limitation of liability provided
+above cannot be given local legal effect according to their terms,
+reviewing courts shall apply local law that most closely approximates
+an absolute waiver of all civil liability in connection with the
+Program, unless a warranty or assumption of liability accompanies a
+copy of the Program in return for a fee.
+
+                     END OF TERMS AND CONDITIONS
+
+            How to Apply These Terms to Your New Programs
+
+  If you develop a new program, and you want it to be of the greatest
+possible use to the public, the best way to achieve this is to make it
+free software which everyone can redistribute and change under these terms.
+
+  To do so, attach the following notices to the program.  It is safest
+to attach them to the start of each source file to most effectively
+state the exclusion of warranty; and each file should have at least
+the "copyright" line and a pointer to where the full notice is found.
+
+    <one line to give the program's name and a brief idea of what it does.>
+    Copyright (C) <year>  <name of author>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Also add information on how to contact you by electronic and paper mail.
+
+  If the program does terminal interaction, make it output a short
+notice like this when it starts in an interactive mode:
+
+    <program>  Copyright (C) <year>  <name of author>
+    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; type `show c' for details.
+
+The hypothetical commands `show w' and `show c' should show the appropriate
+parts of the General Public License.  Of course, your program's commands
+might be different; for a GUI interface, you would use an "about box".
+
+  You should also get your employer (if you work as a programmer) or school,
+if any, to sign a "copyright disclaimer" for the program, if necessary.
+For more information on this, and how to apply and follow the GNU GPL, see
+<http://www.gnu.org/licenses/>.
+
+  The GNU General Public License does not permit incorporating your program
+into proprietary programs.  If your program is a subroutine library, you
+may consider it more useful to permit linking proprietary applications with
+the library.  If this is what you want to do, use the GNU Lesser General
+Public License instead of this License.  But first, please read
+<http://www.gnu.org/philosophy/why-not-lgpl.html>.
+
+-->
+</html>
