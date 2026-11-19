@@ -24,8 +24,30 @@ y la máquina, con el blanco.
 | Avanzado | 8 × 8 | 8 |
 
 La máquina usa MiniMax para explorar jugadas alternas. Si alcanza el límite de
-profundidad en una posición donde la partida sigue en curso, evalúa esa posición
-con una heurística. Cada movimiento individual cuenta como un nivel de profundidad.
+profundidad en una posición donde la partida sigue en curso, cuenta los saltos
+legales del caballo negro. Cada movimiento individual cuenta como un nivel de
+profundidad. MiniMax usa poda alfa-beta y calcula en segundo plano.
+
+MMKV guarda el tablero y el turno después de cada jugada. Al reabrir la app se
+recupera la última partida, incluido el ganador si ya terminó.
+
+## Ejecutar la app
+
+**Android.** Con JDK 17, Android SDK 36 y un emulador o dispositivo de 64 bits,
+ejecuta desde la raíz y abre Horses Go.
+
+```bash
+./gradlew :androidApp:installDebug
+```
+
+**iOS.** En una Mac con Apple Silicon, abre `iosApp/iosApp.xcodeproj` con
+Xcode y ejecuta el esquema `iosApp`. El proyecto ejecuta Gradle para integrar
+el módulo compartido. Xcode 27 requiere un mínimo de iOS 15 para compilar con
+sus SDKs.
+
+Las pruebas compartidas se ejecutan con `./gradlew :shared:allTests`. La
+[guía de validación](specs/001-horses-go/quickstart.md) contiene las pruebas de
+aceptación y sus resultados.
 
 ## Constitución del proyecto
 
@@ -35,8 +57,3 @@ en Kotlin Multiplatform, un tablero representado por una matriz de enteros y las
 reglas que deben respetar tanto la partida como las simulaciones de MiniMax.
 También define los criterios de verificación en Android e iOS y el proceso de
 enmienda.
-
-## Estado del proyecto
-
-El proyecto está en la etapa de constitución. La implementación de la aplicación
-está pendiente.
