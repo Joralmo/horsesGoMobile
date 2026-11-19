@@ -1,7 +1,7 @@
 # Validación de Horses Go
 
-Ejecutar esta guía cuando el repositorio tenga el proyecto Android, el host
-iOS y el wrapper de Gradle definidos en el [plan](plan.md).
+Ejecutar los comandos desde la raíz del repositorio. El [plan](plan.md)
+documenta la arquitectura y las versiones de las dependencias.
 
 ## Preparación
 
@@ -9,8 +9,8 @@ iOS y el wrapper de Gradle definidos en el [plan](plan.md).
 2. Preparar Android SDK 36 y un dispositivo o emulador de 64 bits con
    Android API 23 o superior.
 3. En una Mac con Apple Silicon, preparar Xcode y un simulador iOS ARM64.
-   Xcode 26.4 es la referencia del compilador. Si se usa Xcode 27.0, registrar
-   el resultado de enlace y ejecución.
+   Xcode 26.4 es la referencia documentada del compilador Kotlin. El proyecto
+   configura un mínimo de iOS 15 para los SDKs de Xcode 27.
 
 ```bash
 java -version
@@ -49,3 +49,35 @@ desde el emulador o dispositivo.
 Registrar versiones, dispositivos y resultados con la revisión de
 implementación. El [contrato de interacción](contracts/gameplay.md)
 describe los estados que deben observarse.
+
+## Resultados de implementación
+
+Validación local del 2026-11-19 con JDK 17, Gradle 9.3.1 y Xcode 27.0
+(27A266a). El APK debug se instaló en un Pixel 8a emulado con Android 16.
+El proyecto iOS compiló para simulador y para dispositivo ARM64 sin firma.
+La ejecución de iOS se probó en un iPhone 16 Pro simulado con iOS 18.6.
+
+En ambos entornos se completaron partidas de los tres niveles, se
+confirmaron victorias de ambos participantes en principiante y se
+recuperaron desde MMKV el tablero de una partida en curso y el de una
+partida terminada después de cerrar el proceso. También se verificaron
+el rechazo de un destino no válido y el reemplazo de mapa. Las pruebas
+comunes verifican el descarte de una respuesta tardía tras el reemplazo.
+
+Las 18 pruebas compartidas pasaron en Android host y en iOS Simulator ARM64.
+
+### SC-003 · Respuesta de la máquina
+
+La medición automatizada comienza antes de tocar la casilla y termina
+cuando la respuesta blanca aparece en pantalla. Incluye la entrada
+de prueba y el renderizado.
+
+| Nivel | Pixel 8a emulado ≤ 2 s | Máximo | iPhone 16 Pro simulado ≤ 2 s | Máximo |
+| --- | ---: | ---: | ---: | ---: |
+| Principiante | 30/30 | 0,578 s | 30/30 | 0,560 s |
+| Intermedio | 30/30 | 0,530 s | 30/30 | 0,596 s |
+| Avanzado | 30/30 | 0,944 s | 30/30 | 0,631 s |
+
+### SC-004 · Primer uso
+
+Pendiente de observar a cinco personas que jueguen por primera vez.

@@ -1,0 +1,30 @@
+package com.horsesgo.ui
+
+import com.horsesgo.game.Difficulty
+import com.horsesgo.game.MatchState
+import com.horsesgo.game.Side
+
+internal enum class Screen { Loading, Selector, Board }
+
+internal enum class GameMessage {
+    InvalidSave,
+    ReadFailed,
+    SaveFailed,
+}
+
+internal data class GameUiState(
+    val screen: Screen = Screen.Loading,
+    val match: MatchState? = null,
+    val selectedLevel: Difficulty? = null,
+    val winner: Side? = null,
+    val saving: Boolean = false,
+    val thinking: Boolean = false,
+    val message: GameMessage? = null,
+) {
+    val canPlay: Boolean
+        get() = screen == Screen.Board && match?.turn == Side.Black &&
+            winner == null && !saving && message != GameMessage.SaveFailed
+
+    val canLoad: Boolean
+        get() = screen == Screen.Selector && selectedLevel != null && !saving
+}
