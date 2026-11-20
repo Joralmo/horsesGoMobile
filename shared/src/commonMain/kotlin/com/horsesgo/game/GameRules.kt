@@ -1,7 +1,19 @@
 package com.horsesgo.game
 
-internal class GameRules {
-    fun open(level: Difficulty): MatchState = MatchState(level, Board.opening(level), Side.Black)
+import kotlin.random.Random
+
+internal class GameRules(private val random: Random = Random.Default) {
+    fun open(level: Difficulty): MatchState {
+        val size = level.size
+        val cells = size * size
+        val blackIndex = random.nextInt(cells)
+        val whiteDraw = random.nextInt(cells - 1)
+        // The white draw ranges over all cells except the black horse's cell.
+        val whiteIndex = if (whiteDraw < blackIndex) whiteDraw else whiteDraw + 1
+        val black = Position(blackIndex / size, blackIndex % size)
+        val white = Position(whiteIndex / size, whiteIndex % size)
+        return MatchState(level, Board.opening(size, black, white), Side.Black)
+    }
 
     fun legalDestinations(board: Board, side: Side): List<Position> =
         candidates(board, side).filter { board[it] == Board.FREE }

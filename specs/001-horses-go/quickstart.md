@@ -49,17 +49,16 @@ Registrar versiones, dispositivos y resultados con la revisión de
 implementación. El [contrato de interacción](contracts/gameplay.md)
 describe los estados que deben observarse.
 
-## Validación del tablero Chessground
+## Verificar el tablero nativo
 
-En esta copia se probó la app instalada en un iPhone 17 simulado con iOS
-26.3 y un Pixel 8 Pro emulado con Android 16. En cada plataforma se cargaron
-los tres mapas, se tocó un destino legal y se comprobó la respuesta de la
-máquina. En el mapa de principiante se cerró y se volvió a abrir la app tras
-dos jugadas para comprobar las posiciones y las casillas destruidas.
-
-Las 18 pruebas compartidas pasaron en cada plataforma. Xcode 26.3 también
-compiló la app para iPhone físico ARM64 sin firma. El simulador, la
-compilación para dispositivo y el APK incluyen el mismo archivo de tablero.
+1. En Android y en iOS, carga los mapas 4×4, 5×5, 6×6 y 8×8. Comprueba las
+   coordenadas y los dos caballos. Las aperturas son aleatorias.
+2. Toca uno de los destinos verdes. Tras la respuesta de la máquina, comprueba
+   el contador de jugadas y las casillas destruidas. En 5×5, abre el árbol
+   MiniMax y vuelve al tablero.
+3. Cierra y reabre la app. Comprueba que se mantienen las dos posiciones y
+   las casillas destruidas. Para comparar el aspecto entre plataformas,
+   abre la misma partida guardada en ambos dispositivos.
 
 ## Resultados de implementación
 

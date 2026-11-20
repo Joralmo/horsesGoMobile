@@ -2,6 +2,7 @@ package com.horsesgo.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.horsesgo.ai.MinimaxTree
 import com.horsesgo.ai.MoveSearch
 import com.horsesgo.game.Difficulty
 import com.horsesgo.game.GameRules
@@ -29,6 +30,7 @@ internal class GameViewModel(
 ) : ViewModel() {
     private val state = MutableStateFlow(GameUiState())
     val uiState = state.asStateFlow()
+    private val tree = MinimaxTree(rules)
 
     private data class PendingSave(val match: MatchState, val opensMap: Boolean)
     private data class SearchToken(val generation: Long, val moveNumber: Int)
@@ -61,7 +63,16 @@ internal class GameViewModel(
         val current = state.value
         val level = current.selectedLevel ?: return
         if (!current.canLoad) return
+        startMatch(level)
+    }
 
+    fun restartMatch() {
+        val current = state.value
+        val match = current.match ?: return
+        if (current.canRestart) startMatch(match.difficulty)
+    }
+
+    private fun startMatch(level: Difficulty) {
         generation++
         searchJob?.cancel()
         searchJob = null
@@ -82,9 +93,21 @@ internal class GameViewModel(
         if (!state.value.saving) save(retry)
     }
 
+    fun openMinimaxTree() {
+        val current = state.value
+        val match = current.match ?: return
+        if (!current.canViewMinimaxTree) return
+        val root = tree.build(match)
+        state.update { it.copy(minimaxTree = root) }
+    }
+
+    fun closeMinimaxTree() {
+        state.update { it.copy(minimaxTree = null) }
+    }
+
     fun openSelector() {
         val current = state.value
-        if (current.screen == Screen.Board && !current.saving) {
+        if (current.canChangeMap) {
             state.update { it.copy(screen = Screen.Selector, selectedLevel = current.match?.difficulty) }
         }
     }
@@ -115,6 +138,11 @@ internal class GameViewModel(
     }
 
     private fun publishMatch(match: MatchState, opensMap: Boolean) {
+        val playerDestinations = if (match.turn == Side.Black) {
+            rules.legalDestinations(match.board, Side.Black)
+        } else {
+            emptyList()
+        }
         state.update {
             it.copy(
                 screen = if (opensMap) Screen.Board else it.screen,
@@ -124,6 +152,8 @@ internal class GameViewModel(
                 saving = false,
                 thinking = false,
                 message = null,
+                playerDestinations = playerDestinations,
+                minimaxTree = null,
             )
         }
         searchIfNeeded()

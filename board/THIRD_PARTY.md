@@ -1,19 +1,10 @@
-# Third-party notices
+# Piezas Cburnett
 
-This board embeds **Chessground 10.5.0** from the official Lichess package
-`@lichess-org/chessground`, distributed under **GPL-3.0-or-later**.
+Los dos caballos son obra de Colin M. L. Burnett. Se adaptaron las rutas SVG de
+la colección Cburnett incluida en `@lichess-org/chessground` 10.5.0 al formato
+VectorDrawable el 19 de noviembre de 2026. Compose dibuja ambos recursos en
+Android e iOS. [Atribución de Lichess](https://github.com/lichess-org/lila/blob/master/COPYING.md).
 
-- Repository: https://github.com/lichess-org/chessground
-- Package metadata: https://registry.npmjs.org/@lichess-org/chessground/-/chessground-10.5.0.tgz
-- Version: `10.5.0`
-- Included resources: `dist/chessground.min.js`, `assets/chessground.base.css`,
-  `assets/chessground.brown.css`, and `assets/chessground.cburnett.css`.
-- The Cburnett piece set is credited to Colin M. L. Burnett and is distributed
-  under GPLv2+ in the Lichess attribution notice:
-  https://github.com/lichess-org/lila/blob/master/COPYING.md
-- License text: `CHESSGROUND-LICENSE` (copied verbatim from the package);
-  the generated `board.html` also carries the complete license in its source
-  comment.
-
-`board.html` is the corresponding offline source artifact generated from this
-directory and the lockfile. No network request is made by the runtime page.
+La obra original permite GPL versión 2 o posterior. La app incluye los créditos
+y una copia de la versión 3 con los recursos.
+[Texto distribuido con la app](../shared/src/commonMain/composeResources/files/cburnett-license.txt).

@@ -1,3 +1,8 @@
+Cburnett knight artwork by Colin M. L. Burnett, GPL-2.0-or-later.
+Adapted to VectorDrawable XML for Horses Go on 2026-11-19.
+Source: https://github.com/lichess-org/lila/tree/master/public/piece/cburnett
+Distributed here under GPL version 3, included below.
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

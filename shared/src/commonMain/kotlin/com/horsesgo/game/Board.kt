@@ -35,11 +35,12 @@ internal class Board private constructor(
         const val BLACK = 2
         const val WHITE = 3
 
-        fun opening(level: Difficulty): Board {
-            val rows = Array(level.size) { IntArray(level.size) }
-            rows[level.blackStart.row][level.blackStart.column] = BLACK
-            rows[level.whiteStart.row][level.whiteStart.column] = WHITE
-            return Board(rows, level.blackStart, level.whiteStart, 0)
+        fun opening(size: Int, black: Position, white: Position): Board {
+            require(black != white)
+            val rows = Array(size) { IntArray(size) }
+            rows[black.row][black.column] = BLACK
+            rows[white.row][white.column] = WHITE
+            return Board(rows, black, white, 0)
         }
 
         fun fromCells(size: Int, cells: List<List<Int>>): Board? {

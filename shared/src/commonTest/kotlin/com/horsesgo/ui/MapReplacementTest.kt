@@ -33,7 +33,7 @@ class MapReplacementTest {
                 vm.selectLevel(Difficulty.Beginner)
                 vm.loadSelectedMap()
                 runCurrent()
-                vm.play(Position(3, 0))
+                vm.play(vm.uiState.value.playerDestinations.first())
                 runCurrent()
                 assertTrue(started.isCompleted)
                 vm.play(Position(0, 0))
